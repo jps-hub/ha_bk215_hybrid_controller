@@ -1,0 +1,195 @@
+{
+  "config": {
+    "error": {
+      "unknown": "Could not create the controller configuration. Check the Home Assistant log for details."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "avg_battery_soc": "Battery tower level entity",
+          "discharge_limit_a": "Battery cabinet discharge limit entity",
+          "discharge_limit_b": "Hybrid inverter discharge limit entity, for example main hybrid inverter discharge limit",
+          "power_sensor_entity": "Shelly entity or another sensor for the current power",
+          "interval_seconds": "Control interval",
+          "deadband_min": "Deadband minimum (-20W standard / 1 APsystems -50W / 2 APsystems -100W)",
+          "deadband_max": "Deadband maximum (20W standard)",
+          "buffer_soc": "Buffer value for the discharge limit",
+          "max_power_inverter_limit": "Limit for the maximum inverter power limit",
+          "min_power_inverter_limit": "Limit for the minimum inverter power limit",
+          "hold_time": "Startup delay when regulating from 0% to x%"
+        },
+        "title": "General settings"
+      },
+      "inverter1": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "title": "Inverter 1"
+      },
+      "inverter2": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "description": "Leave all fields empty if you do not use a second inverter.",
+        "title": "Inverter 2"
+      },
+      "pid": {
+        "data": {
+          "kp_min": "Minimum Kp value (default 0.4)",
+          "kp_max": "Maximum Kp value (default 0.9)",
+          "kp_error_scale": "Kp error scale (default 600)",
+          "ki": "Ki value (default 0.02)",
+          "kd": "Kd value (default 0.12)",
+          "kd_error_scale": "Kd error scale (default 300)",
+          "kd_dt_ref": "Kd dt reference (default 3)",
+          "kd_max": "Kd maximum (default 0.35)"
+        },
+        "title": "PID settings"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "avg_battery_soc": "Battery tower level entity",
+          "discharge_limit_a": "Battery cabinet discharge limit entity",
+          "discharge_limit_b": "Hybrid inverter discharge limit entity, for example main hybrid inverter discharge limit",
+          "power_sensor_entity": "Shelly entity or another sensor for the current power",
+          "interval_seconds": "Control interval",
+          "buffer_soc": "Buffer value for the discharge limit",
+          "max_power_inverter_limit": "Limit for the maximum inverter power limit",
+          "min_power_inverter_limit": "Limit for the minimum inverter power limit",
+          "hold_time": "Startup delay when regulating from 0% to x%"
+        },
+        "title": "General settings"
+      },
+      "inverter1": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "title": "Inverter 1"
+      },
+      "inverter2": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "description": "Leave all fields empty if you do not use a second inverter.",
+        "title": "Inverter 2"
+      },
+      "pid": {
+        "data": {
+          "kp_min": "Minimum Kp value (default 0.4)",
+          "kp_max": "Maximum Kp value (default 0.9)",
+          "kp_error_scale": "Kp error scale (default 600)",
+          "ki": "Ki value (default 0.02)",
+          "kd": "Kd value (default 0.12)",
+          "kd_error_scale": "Kd error scale (default 300)",
+          "kd_dt_ref": "Kd dt reference (default 3)",
+          "kd_max": "Kd maximum (default 0.35)"
+        },
+        "title": "PID settings"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "automatic_active": {
+        "name": "Automatic active"
+      },
+      "boost_active": {
+        "name": "Boost active"
+      },
+      "inverter1_active": {
+        "name": "Inverter 1 active"
+      },
+      "inverter2_active": {
+        "name": "Inverter 2 active"
+      }
+    },
+    "number": {
+      "charge_limit_start": {
+        "name": "Feed-in start threshold"
+      },
+      "max_power_inverter": {
+        "name": "Max power inverter"
+      },
+      "min_power_inverter": {
+        "name": "Min power inverter"
+      },
+      "offset": {
+        "name": "Power sensor offset"
+      },
+      "deadband_min": {
+        "name": "Deadband minimum"
+      },
+      "deadband_max": {
+        "name": "Deadband maximum"
+      }
+    },
+    "sensor": {
+      "system_state": {
+        "name": "System state",
+        "state": {
+          "inactive": "Inactive",
+          "inv_off": "Inverter off",
+          "inv_on": "Inverter on",
+          "soc_low": "Battery level low",
+          "failure": "Failure",
+          "inv1_on_inv2_failure": "Inverter 1 on, inverter 2 failure",
+          "inv2_on_inv1_failure": "Inverter 2 on, inverter 1 failure"
+        }
+      },
+      "deadband_state": {
+        "name": "Deadband state",
+        "state": {
+          "neutral": "Neutral",
+          "import": "Import",
+          "export": "Export"
+        }
+      },
+      "integral_store": {
+        "name": "Integral value"
+      },
+      "last_target_store": {
+        "name": "Last target value"
+      },
+      "last_error_store": {
+        "name": "Last error"
+      },
+      "filtered_error_store": {
+        "name": "Filtered error"
+      }
+    },
+    "switch": {
+      "automatic": {
+        "name": "Automatic"
+      },
+      "boost": {
+        "name": "Boost"
+      },
+      "inverter1_helper": {
+        "name": "Inverter 1 helper"
+      },
+      "inverter2_helper": {
+        "name": "Inverter 2 helper"
+      }
+    }
+  }
+}

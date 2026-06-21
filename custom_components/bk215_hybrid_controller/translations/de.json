@@ -1,0 +1,195 @@
+{
+  "config": {
+    "error": {
+      "unknown": "Die Controller-Konfiguration konnte nicht erstellt werden. Prüfe das Home-Assistant-Protokoll für Details."
+    },
+    "step": {
+      "user": {
+        "data": {
+          "avg_battery_soc": "Entität Speicherlevel Turm",
+          "discharge_limit_a": "Entität BK Entladegrenze",
+          "discharge_limit_b": "Entität HW-Entladegrenze z.B. Kopf HW-Entladegrenze",
+          "power_sensor_entity": "Entität Shelly oder anderer Sensor für die aktuelle Leistung",
+          "interval_seconds": "Regelintervall",
+          "deadband_min": "Deadband-Minimum (-20W Standard / 1 APs -50W / 2 APs -100W)",
+          "deadband_max": "Deadband-Maximum (20W Standard)",
+          "buffer_soc": "Pufferwert für Entladegrenze",
+          "max_power_inverter_limit": "Limit für Maximale Wechselrichter-Leistungsgrenze",
+          "min_power_inverter_limit": "Limit für Minimale Wechselrichter-Leistungsgrenze",
+          "hold_time": "Anlaufverzögerung bei Regelung von 0% auf x%"
+        },
+        "title": "Allgemeine Einstellungen"
+      },
+      "inverter1": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "title": "Wechselrichter 1"
+      },
+      "inverter2": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "description": "Lasse alle Felder leer, wenn du keinen zweiten Wechselrichter verwendest.",
+        "title": "Wechselrichter 2"
+      },
+      "pid": {
+        "data": {
+          "kp_min": "Minimaler Kp-Wert (Startwert 0.4)",
+          "kp_max": "Maximaler Kp-Wert (Startwert 0.9)",
+          "kp_error_scale": "Kp-Fehlerskalierung (Startwert 600)",
+          "ki": "Ki-Wert (Startwert 0.02)",
+          "kd": "Kd-Wert (Startwert 0.12)",
+          "kd_error_scale": "Kd-Fehlerskalierung (Startwert 300)",
+          "kd_dt_ref": "Kd-Dt-Referenz (Startwert 3)",
+          "kd_max": "Kd-Maximum (Startwert 0.35)"
+        },
+        "title": "PID-Einstellungen"
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "avg_battery_soc": "Entität Speicherlevel Turm",
+          "discharge_limit_a": "Entität BK Entladegrenze",
+          "discharge_limit_b": "Entität HW-Entladegrenze z.B. Kopf HW-Entladegrenze",
+          "power_sensor_entity": "Entität Shelly oder anderer Sensor für die aktuelle Leistung",
+          "interval_seconds": "Regelintervall",
+          "buffer_soc": "Pufferwert für Entladegrenze",
+          "max_power_inverter_limit": "Limit für Maximale Wechselrichter-Leistungsgrenze",
+          "min_power_inverter_limit": "Limit für Minimale Wechselrichter-Leistungsgrenze",
+          "hold_time": "Anlaufverzögerung bei Regelung von 0% auf x%"
+        },
+        "title": "Allgemeine Einstellungen"
+      },
+      "inverter1": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "title": "Wechselrichter 1"
+      },
+      "inverter2": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "description": "Lasse alle Felder leer, wenn du keinen zweiten Wechselrichter verwendest.",
+        "title": "Wechselrichter 2"
+      },
+      "pid": {
+        "data": {
+          "kp_min": "Minimaler Kp-Wert (Startwert 0.4)",
+          "kp_max": "Maximaler Kp-Wert (Startwert 0.9)",
+          "kp_error_scale": "Kp-Fehlerskalierung (Startwert 600)",
+          "ki": "Ki-Wert (Startwert 0.02)",
+          "kd": "Kd-Wert (Startwert 0.12)",
+          "kd_error_scale": "Kd-Fehlerskalierung (Startwert 300)",
+          "kd_dt_ref": "Kd-Dt-Referenz (Startwert 3)",
+          "kd_max": "Kd-Maximum (Startwert 0.35)"
+        },
+        "title": "PID-Einstellungen"
+      }
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "automatic_active": {
+        "name": "Automatik aktiv"
+      },
+      "boost_active": {
+        "name": "Boost aktiv"
+      },
+      "inverter1_active": {
+        "name": "Wechselrichter 1 aktiv"
+      },
+      "inverter2_active": {
+        "name": "Wechselrichter 2 aktiv"
+      }
+    },
+    "number": {
+      "charge_limit_start": {
+        "name": "Grenzwert Start der Einspeisung"
+      },
+      "max_power_inverter": {
+        "name": "Maximale Wechselrichterleistung"
+      },
+      "min_power_inverter": {
+        "name": "Minimale Wechselrichterleistung"
+      },
+      "offset": {
+        "name": "Offset Leistungssensor"
+      },
+      "deadband_min": {
+        "name": "Deadband-Minimum"
+      },
+      "deadband_max": {
+        "name": "Deadband-Maximum"
+      }
+    },
+    "sensor": {
+      "system_state": {
+        "name": "Systemstatus",
+        "state": {
+          "inactive": "Inaktiv",
+          "inv_off": "WR aus",
+          "inv_on": "WR an",
+          "soc_low": "Speicherstand niedrig",
+          "failure": "Fehler",
+          "inv1_on_inv2_failure": "WR 1 an, WR 2 Fehler",
+          "inv2_on_inv1_failure": "WR 2 an, WR 1 Fehler"
+        }
+      },
+      "deadband_state": {
+        "name": "Deadband-Status",
+        "state": {
+          "neutral": "Neutral",
+          "import": "Import",
+          "export": "Export"
+        }
+      },
+      "integral_store": {
+        "name": "Integralwert"
+      },
+      "last_target_store": {
+        "name": "Letzter Zielwert"
+      },
+      "last_error_store": {
+        "name": "Letzter Fehler"
+      },
+      "filtered_error_store": {
+        "name": "Gefilterter Fehler"
+      }
+    },
+    "switch": {
+      "automatic": {
+        "name": "Automatik"
+      },
+      "boost": {
+        "name": "Boost"
+      },
+      "inverter1_helper": {
+        "name": "WR 1 Helfer"
+      },
+      "inverter2_helper": {
+        "name": "WR 2 Helfer"
+      }
+    }
+  }
+}
