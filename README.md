@@ -38,7 +38,7 @@ near-zero grid feed-in using a PID-based control loop.
 1. Open HACS in your Home Assistant instance
 2. Click on **Integrations**
 3. Click the three dots menu in the top right corner and select **Custom repositories**
-4. Add this repository URL: `https://github.com/jps-hub/bk215_hybrid_controller`
+4. Add this repository URL: `https://github.com/jps-hub/ha_bk215_hybrid_controller`
 5. Select **Integration** as the category
 6. Click **Add**
 7. Search for "BK215 Hybrid Controller by JPS" in HACS
@@ -262,7 +262,7 @@ Sie verbindet einen Batteriespeicher (z. B. BK215) und ein oder zwei Mikrowechse
 1. HACS in deiner Home Assistant-Instanz öffnen
 2. Auf **Integrationen** klicken
 3. Das Drei-Punkte-Menü oben rechts öffnen und **Benutzerdefinierte Repositories** auswählen
-4. Diese Repository-URL hinzufügen: `https://github.com/jps-hub/bk215_hybrid_controller`
+4. Diese Repository-URL hinzufügen: `https://github.com/jps-hub/ha_bk215_hybrid_controller`
 5. Als Kategorie **Integration** auswählen
 6. Auf **Hinzufügen** klicken
 7. In HACS nach "BK215 Hybrid Controller by JPS" suchen
