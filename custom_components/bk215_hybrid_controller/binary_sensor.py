@@ -27,6 +27,8 @@ class BK215HybridControllerBinarySensorEntityDescription(BinarySensorEntityDescr
 
     value_fn: Callable[[BK215HybridController], bool]
     requires_inverter2: bool = False
+    requires_inverter3: bool = False
+    requires_inverter4: bool = False
 
 
 BINARY_SENSOR_DESCRIPTIONS: tuple[
@@ -47,19 +49,97 @@ BINARY_SENSOR_DESCRIPTIONS: tuple[
         value_fn=lambda controller: controller.boost_active,
     ),
     BK215HybridControllerBinarySensorEntityDescription(
-        key="inverter1_active",
+        key="inverter1_helper_active",
         name=None,
-        translation_key="inverter1_active",
+        translation_key="inverter1_helper_active",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda controller: controller.inverter1_active,
     ),
     BK215HybridControllerBinarySensorEntityDescription(
-        key="inverter2_active",
+        key="inverter2_helper_active",
         name=None,
-        translation_key="inverter2_active",
+        translation_key="inverter2_helper_active",
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda controller: controller.inverter2_active,
         requires_inverter2=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter1_switch",
+        name=None,
+        translation_key="inverter1_switch",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter1_switch_on,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter2_switch",
+        name=None,
+        translation_key="inverter2_switch",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter2_switch_on,
+        requires_inverter2=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter1_manual",
+        name=None,
+        translation_key="inverter1_manual",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter1_manual_enabled,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter2_manual",
+        name=None,
+        translation_key="inverter2_manual",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter2_manual_enabled,
+        requires_inverter2=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter3_helper_active",
+        name=None,
+        translation_key="inverter3_helper_active",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter3_active,
+        requires_inverter3=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter4_helper_active",
+        name=None,
+        translation_key="inverter4_helper_active",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter4_active,
+        requires_inverter4=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter3_switch",
+        name=None,
+        translation_key="inverter3_switch",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter3_switch_on,
+        requires_inverter3=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter4_switch",
+        name=None,
+        translation_key="inverter4_switch",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter4_switch_on,
+        requires_inverter4=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter3_manual",
+        name=None,
+        translation_key="inverter3_manual",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter3_manual_enabled,
+        requires_inverter3=True,
+    ),
+    BK215HybridControllerBinarySensorEntityDescription(
+        key="inverter4_manual",
+        name=None,
+        translation_key="inverter4_manual",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.inverter4_manual_enabled,
+        requires_inverter4=True,
     ),
 )
 
@@ -75,6 +155,8 @@ async def async_setup_entry(
         BK215HybridControllerBinarySensor(controller, entry, description)
         for description in BINARY_SENSOR_DESCRIPTIONS
         if not description.requires_inverter2 or controller.has_inverter2
+        if not description.requires_inverter3 or controller.has_inverter3
+        if not description.requires_inverter4 or controller.has_inverter4
     )
 
 
