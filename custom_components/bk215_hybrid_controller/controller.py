@@ -54,6 +54,10 @@ class BK215HybridController:
         """Start listeners and the periodic loop."""
         self.state.automatic_enabled = self.config.automatic_enabled
         self.state.boost_enabled = False
+        self.state.inverter1_manual = self.config.inverter1_manual
+        self.state.inverter2_manual = self.config.inverter2_manual
+        self.state.inverter3_manual = self.config.inverter3_manual
+        self.state.inverter4_manual = self.config.inverter4_manual
         if self.state.automatic_enabled:
             self.state.system_state = "inv_off"
             self.state.inverter1_helper = self._is_on(
@@ -62,10 +66,18 @@ class BK215HybridController:
             self.state.inverter2_helper = self.config.inverter2.exists and self._is_on(
                 self.config.inverter2.switch_entity
             )
+            self.state.inverter3_helper = self.config.inverter3.exists and self._is_on(
+                self.config.inverter3.switch_entity
+            )
+            self.state.inverter4_helper = self.config.inverter4.exists and self._is_on(
+                self.config.inverter4.switch_entity
+            )
         else:
             self.state.system_state = "inactive"
             self.state.inverter1_helper = False
             self.state.inverter2_helper = False
+            self.state.inverter3_helper = False
+            self.state.inverter4_helper = False
 
         tracked_entities = [
             self.config.power_sensor_entity,
@@ -73,11 +85,13 @@ class BK215HybridController:
             self.config.inverter1.switch_entity,
         ]
         if self.config.inverter2.exists:
-            tracked_entities.extend(
-                [
-                    self.config.inverter2.switch_entity,
-                ]
-            )
+            tracked_entities.append(self.config.inverter2.switch_entity)
+        if self.config.tower2_enabled:
+            tracked_entities.append(self.config.avg_battery_soc_2)
+        if self.config.inverter3.exists:
+            tracked_entities.append(self.config.inverter3.switch_entity)
+        if self.config.inverter4.exists:
+            tracked_entities.append(self.config.inverter4.switch_entity)
 
         self._unsubs.append(
             async_track_state_change_event(
@@ -141,9 +155,75 @@ class BK215HybridController:
         return self.config.inverter2.exists and self.state.inverter2_helper
 
     @property
+    def inverter1_switch_on(self) -> bool:
+        """Return the actual on/off state of the inverter 1 switch entity."""
+        return self._is_on(self.config.inverter1.switch_entity)
+
+    @property
+    def inverter2_switch_on(self) -> bool:
+        """Return the actual on/off state of the inverter 2 switch entity."""
+        return self.config.inverter2.exists and self._is_on(
+            self.config.inverter2.switch_entity
+        )
+
+    @property
     def has_inverter2(self) -> bool:
         """Return whether a second inverter is configured."""
         return self.config.inverter2.exists
+
+    @property
+    def has_inverter3(self) -> bool:
+        """Return whether a third inverter (tower 2) is configured."""
+        return self.config.inverter3.exists
+
+    @property
+    def has_inverter4(self) -> bool:
+        """Return whether a fourth inverter (tower 2) is configured."""
+        return self.config.inverter4.exists
+
+    @property
+    def inverter3_active(self) -> bool:
+        """Return whether inverter 3 is currently active."""
+        return self.config.inverter3.exists and self.state.inverter3_helper
+
+    @property
+    def inverter4_active(self) -> bool:
+        """Return whether inverter 4 is currently active."""
+        return self.config.inverter4.exists and self.state.inverter4_helper
+
+    @property
+    def inverter3_switch_on(self) -> bool:
+        """Return the actual on/off state of the inverter 3 switch entity."""
+        return self.config.inverter3.exists and self._is_on(
+            self.config.inverter3.switch_entity
+        )
+
+    @property
+    def inverter4_switch_on(self) -> bool:
+        """Return the actual on/off state of the inverter 4 switch entity."""
+        return self.config.inverter4.exists and self._is_on(
+            self.config.inverter4.switch_entity
+        )
+
+    @property
+    def inverter3_helper_enabled(self) -> bool:
+        """Return the internal helper state for inverter 3."""
+        return self.config.inverter3.exists and self.state.inverter3_helper
+
+    @property
+    def inverter4_helper_enabled(self) -> bool:
+        """Return the internal helper state for inverter 4."""
+        return self.config.inverter4.exists and self.state.inverter4_helper
+
+    @property
+    def inverter3_manual_enabled(self) -> bool:
+        """Return whether inverter 3 is manually disabled."""
+        return self.config.inverter3.exists and self.state.inverter3_manual
+
+    @property
+    def inverter4_manual_enabled(self) -> bool:
+        """Return whether inverter 4 is manually disabled."""
+        return self.config.inverter4.exists and self.state.inverter4_manual
 
     @property
     def inverter1_helper_enabled(self) -> bool:
@@ -154,6 +234,16 @@ class BK215HybridController:
     def inverter2_helper_enabled(self) -> bool:
         """Return the internal helper state for inverter 2."""
         return self.config.inverter2.exists and self.state.inverter2_helper
+
+    @property
+    def inverter1_manual_enabled(self) -> bool:
+        """Return whether inverter 1 is manually disabled."""
+        return self.state.inverter1_manual
+
+    @property
+    def inverter2_manual_enabled(self) -> bool:
+        """Return whether inverter 2 is manually disabled."""
+        return self.config.inverter2.exists and self.state.inverter2_manual
 
     @property
     def automatic_enabled(self) -> bool:
@@ -182,8 +272,13 @@ class BK215HybridController:
 
     @property
     def charge_limit_start_value(self) -> float:
-        """Return the active charge start limit."""
+        """Return the active charge start limit for tower 1."""
         return self.config.charge_limit_start
+
+    @property
+    def charge_limit_start_2_value(self) -> float:
+        """Return the active charge start limit for tower 2."""
+        return self.config.charge_limit_start_2
 
     @property
     def max_power_inverter_value(self) -> float:
@@ -223,6 +318,8 @@ class BK215HybridController:
             self.state.boost_enabled = False
             self.state.inverter1_helper = False
             self.state.inverter2_helper = False
+            self.state.inverter3_helper = False
+            self.state.inverter4_helper = False
             self.state.integral = 0.0
             self.state.last_target = 0.0
             self.state.last_error = 0.0
@@ -257,8 +354,15 @@ class BK215HybridController:
 
     @callback
     def async_set_charge_limit_start(self, value: float) -> None:
-        """Set the active charge start limit."""
+        """Set the active charge start limit for tower 1."""
         self.config.charge_limit_start = value
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
+    def async_set_charge_limit_start_2(self, value: float) -> None:
+        """Set the active charge start limit for tower 2."""
+        self.config.charge_limit_start_2 = value
         self._notify_state_listeners()
         self._request_control_cycle()
 
@@ -293,6 +397,58 @@ class BK215HybridController:
         self._request_control_cycle()
 
     @callback
+    def async_set_inverter1_manual(self, enabled: bool) -> None:
+        """Enable or disable manual mode for inverter 1."""
+        self.state.inverter1_manual = enabled
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
+    def async_set_inverter2_manual(self, enabled: bool) -> None:
+        """Enable or disable manual mode for inverter 2."""
+        if not self.config.inverter2.exists:
+            return
+        self.state.inverter2_manual = enabled
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
+    def async_set_inverter3_helper(self, enabled: bool) -> None:
+        """Set the internal helper state for inverter 3."""
+        if not self.config.inverter3.exists:
+            return
+        self.state.inverter3_helper = enabled
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
+    def async_set_inverter4_helper(self, enabled: bool) -> None:
+        """Set the internal helper state for inverter 4."""
+        if not self.config.inverter4.exists:
+            return
+        self.state.inverter4_helper = enabled
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
+    def async_set_inverter3_manual(self, enabled: bool) -> None:
+        """Enable or disable manual mode for inverter 3."""
+        if not self.config.inverter3.exists:
+            return
+        self.state.inverter3_manual = enabled
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
+    def async_set_inverter4_manual(self, enabled: bool) -> None:
+        """Enable or disable manual mode for inverter 4."""
+        if not self.config.inverter4.exists:
+            return
+        self.state.inverter4_manual = enabled
+        self._notify_state_listeners()
+        self._request_control_cycle()
+
+    @callback
     def _request_control_cycle(self) -> None:
         """Request a control cycle if automatic mode is enabled."""
         if not self.state.automatic_enabled:
@@ -303,14 +459,32 @@ class BK215HybridController:
         """Return the internal helper state for an inverter."""
         if inverter is self.config.inverter1:
             return self.state.inverter1_helper
-        return self.state.inverter2_helper
+        if inverter is self.config.inverter2:
+            return self.state.inverter2_helper
+        if inverter is self.config.inverter3:
+            return self.state.inverter3_helper
+        return self.state.inverter4_helper
+
+    def _is_manual(self, inverter: InverterConfig) -> bool:
+        """Return whether the inverter is user-disabled via the manual switch."""
+        if inverter is self.config.inverter1:
+            return self.state.inverter1_manual
+        if inverter is self.config.inverter2:
+            return self.config.inverter2.exists and self.state.inverter2_manual
+        if inverter is self.config.inverter3:
+            return self.config.inverter3.exists and self.state.inverter3_manual
+        return self.config.inverter4.exists and self.state.inverter4_manual
 
     def _set_helper_state_for(self, inverter: InverterConfig, enabled: bool) -> None:
         """Set the internal helper state for an inverter."""
         if inverter is self.config.inverter1:
             self.state.inverter1_helper = enabled
-        elif self.config.inverter2.exists:
+        elif inverter is self.config.inverter2 and self.config.inverter2.exists:
             self.state.inverter2_helper = enabled
+        elif inverter is self.config.inverter3 and self.config.inverter3.exists:
+            self.state.inverter3_helper = enabled
+        elif inverter is self.config.inverter4 and self.config.inverter4.exists:
+            self.state.inverter4_helper = enabled
 
     @callback
     def _handle_interval(self, _now: datetime) -> None:
@@ -378,7 +552,12 @@ class BK215HybridController:
         if self.state.system_state != previous_state:
             await self._apply_protection_state(self.state.system_state)
 
-        if self.state.system_state in {"soc_low", "inv_off", "failure"}:
+        if self.state.system_state in {
+            "soc_low",
+            "inv_off",
+            "failure",
+            "both_manual",
+        }:
             await self._ensure_safe_outputs()
             return
 
@@ -401,22 +580,49 @@ class BK215HybridController:
 
     async def _async_start_inverters_if_needed(self) -> bool:
         """Start inverters when SOC is above the configured start limit."""
-        avg_soc = self._get_float(self.config.avg_battery_soc)
-        limit_c = self.charge_limit_start_value
-        if avg_soc < limit_c:
-            return False
-
         started_any = False
-        started_any |= await self._async_start_single_inverter(self.config.inverter1)
-        if self.config.inverter2.exists:
+
+        # Tower 1 — independent start check
+        avg_soc = self._get_float(self.config.avg_battery_soc)
+        limit_a = self._get_float(self.config.discharge_limit_a)
+        limit_b = self._get_float(self.config.discharge_limit_b)
+        if (
+            avg_soc >= self.charge_limit_start_value
+            and avg_soc > max(limit_a, limit_b) + self.config.buffer_soc
+        ):
             started_any |= await self._async_start_single_inverter(
-                self.config.inverter2
+                self.config.inverter1
             )
+            if self.config.inverter2.exists:
+                started_any |= await self._async_start_single_inverter(
+                    self.config.inverter2
+                )
+
+        # Tower 2 — independent start check
+        if self.config.tower2_enabled:
+            avg_soc_2 = self._get_float(self.config.avg_battery_soc_2)
+            limit_a2 = self._get_float(self.config.discharge_limit_a_2)
+            limit_b2 = self._get_float(self.config.discharge_limit_b_2)
+            if (
+                avg_soc_2 >= self.config.charge_limit_start_2
+                and avg_soc_2 > max(limit_a2, limit_b2) + self.config.buffer_soc
+            ):
+                if self.config.inverter3.exists:
+                    started_any |= await self._async_start_single_inverter(
+                        self.config.inverter3
+                    )
+                if self.config.inverter4.exists:
+                    started_any |= await self._async_start_single_inverter(
+                        self.config.inverter4
+                    )
+
         return started_any
 
     async def _async_start_single_inverter(self, inverter: InverterConfig) -> bool:
         """Start one inverter if needed."""
         if not inverter.exists or not inverter.switch_entity:
+            return False
+        if self._is_manual(inverter):
             return False
         if self._helper_state_for(inverter) and self._is_on(inverter.switch_entity):
             return False
@@ -432,31 +638,187 @@ class BK215HybridController:
         self._set_helper_state_for(inverter, True)
         return True
 
+    def _manual_state_tower1(
+        self,
+        inv1_on: bool,
+        inv1_manual: bool,
+        inv2_exists: bool,
+        inv2_on: bool,
+        inv2_manual: bool,
+    ) -> str | None:
+        """Return the Tower 1 manual system state, or None if no manual state applies."""
+        if not inv1_manual and not inv2_manual:
+            return None
+        if inv1_manual:
+            if inv2_exists and inv2_manual:
+                return "both_manual_tower1"
+            if not inv2_exists:
+                return "inv1_manual"
+            return "inv1_manual_inv2_on" if inv2_on else "inv1_manual"
+        return "inv2_manual_inv1_on" if inv1_on else "inv2_manual"
+
+    def _manual_state_tower2(
+        self,
+        inv3_on: bool,
+        inv3_exists: bool,
+        inv3_manual: bool,
+        inv4_exists: bool,
+        inv4_on: bool,
+        inv4_manual: bool,
+    ) -> str | None:
+        """Return the Tower 2 manual system state, or None if no manual state applies."""
+        if not inv3_exists:
+            return None
+        if inv3_manual:
+            if inv4_exists and inv4_manual:
+                return "both_manual_tower2"
+            if not inv4_exists:
+                return "inv3_manual"
+            return "inv3_manual_inv4_on" if inv4_on else "inv3_manual"
+        if inv4_manual:
+            return "inv4_manual_inv3_on" if inv3_on else "inv4_manual"
+        return None
+
     def _calculate_system_state(self) -> str:
         """Calculate the current protection state."""
+        # Tower 1 SOC check
         avg_soc = self._get_float(self.config.avg_battery_soc)
         limit_a = self._get_float(self.config.discharge_limit_a)
         limit_b = self._get_float(self.config.discharge_limit_b)
-        real_min_soc = max(limit_a, limit_b)
-        avg_soc_min = avg_soc <= (real_min_soc + self.config.buffer_soc)
+        soc1_low = avg_soc <= (max(limit_a, limit_b) + self.config.buffer_soc)
 
+        # Tower 2 SOC check
+        soc2_low = False
+        if self.config.tower2_enabled:
+            avg_soc_2 = self._get_float(self.config.avg_battery_soc_2)
+            la2 = self._get_float(self.config.discharge_limit_a_2)
+            lb2 = self._get_float(self.config.discharge_limit_b_2)
+            soc2_low = avg_soc_2 <= (max(la2, lb2) + self.config.buffer_soc)
+
+        if soc1_low and soc2_low:
+            return "soc_low"
+        if soc1_low:
+            return "tower1_soc_low"
+        if soc2_low:
+            return "tower2_soc_low"
+
+        inv1_manual = self._is_manual(self.config.inverter1)
         inv1_on = self.state.inverter1_helper
         inv2_exists = self.config.inverter2.exists
+        inv2_manual = inv2_exists and self._is_manual(self.config.inverter2)
         inv2_on = self.state.inverter2_helper if inv2_exists else False
 
-        if avg_soc_min:
-            return "soc_low"
-        if not inv2_exists:
+        inv3_exists = self.config.inverter3.exists
+        inv3_manual = inv3_exists and self._is_manual(self.config.inverter3)
+        inv3_on = self.state.inverter3_helper if inv3_exists else False
+        inv4_exists = self.config.inverter4.exists
+        inv4_manual = inv4_exists and self._is_manual(self.config.inverter4)
+        inv4_on = self.state.inverter4_helper if inv4_exists else False
+
+        # Both towers fully manual
+        t1_all_manual = inv1_manual and (not inv2_exists or inv2_manual)
+        t2_all_manual = inv3_exists and inv3_manual and (not inv4_exists or inv4_manual)
+        if t1_all_manual and t2_all_manual:
+            return "both_manual"
+
+        # Per-tower manual states
+        if t1_state := self._manual_state_tower1(
+            inv1_on, inv1_manual, inv2_exists, inv2_on, inv2_manual
+        ):
+            return t1_state
+        if t2_state := self._manual_state_tower2(
+            inv3_on, inv3_exists, inv3_manual, inv4_exists, inv4_on, inv4_manual
+        ):
+            return t2_state
+
+        # Normal operation states
+        t1_on = inv1_on or inv2_on
+        t2_on = inv3_on or inv4_on
+
+        if not inv2_exists and not inv3_exists:
             return "inv_on" if inv1_on else "inv_off"
-        if not inv1_on and not inv2_on:
-            return "inv_off"
-        if inv1_on and inv2_on:
-            return "inv_on"
-        if inv1_on and not inv2_on:
-            return "inv1_on_inv2_failure"
-        if not inv1_on and inv2_on:
+
+        if not inv3_exists:
+            if not inv1_on and not inv2_on:
+                return "inv_off"
+            if inv1_on and inv2_on:
+                return "inv_on"
+            if inv1_on:
+                return "inv1_on_inv2_failure"
             return "inv2_on_inv1_failure"
-        return "failure"
+
+        t1_state = self._tower_state(inv1_on, inv2_on, inv2_exists)
+        t2_state = self._tower_state(inv3_on, inv4_on, inv4_exists)
+
+        if t1_state == "on" and t2_state == "on":
+            return "inv_on"
+        if t1_state == "off" and t2_state == "off":
+            return "inv_off"
+        if t1_state == "failure" or t2_state == "failure":
+            return "failure"
+        if t1_state == "partial_failure":
+            return "inv1_on_inv2_failure" if inv1_on else "inv2_on_inv1_failure"
+        if t2_state == "partial_failure":
+            return "inv3_on_inv4_failure" if inv3_on else "inv4_on_inv3_failure"
+        return "inv_on" if (t1_on or t2_on) else "inv_off"
+
+    def _tower_state(self, wr_a_on: bool, wr_b_on: bool, has_wr_b: bool) -> str:
+        """Return a simplified tower state string."""
+        if not has_wr_b:
+            return "on" if wr_a_on else "off"
+        if wr_a_on and wr_b_on:
+            return "on"
+        if not wr_a_on and not wr_b_on:
+            return "off"
+        return "partial_failure"
+
+    def _get_shutdown_targets(
+        self, system_state: str
+    ) -> list[tuple[InverterConfig, bool]]:
+        """Return (inverter, only_if_running) pairs for a protection state.
+
+        only_if_running=False: unconditional safety shutdown (e.g. soc_low).
+        only_if_running=True:  shut down only if the controller started the inverter.
+        """
+        c = self.config
+        all_inv = [
+            i for i in (c.inverter1, c.inverter2, c.inverter3, c.inverter4) if i.exists
+        ]
+        t1_inv = [i for i in (c.inverter1, c.inverter2) if i.exists]
+        t2_inv = [i for i in (c.inverter3, c.inverter4) if i.exists]
+        match system_state:
+            case "soc_low" | "failure":
+                return [(i, False) for i in all_inv]
+            case "inv_off":
+                return [(i, True) for i in all_inv]
+            case "tower1_soc_low":
+                return [(i, True) for i in t1_inv]
+            case "tower2_soc_low":
+                return [(i, True) for i in t2_inv]
+            case "inv1_on_inv2_failure":
+                return [(c.inverter2, False)] if c.inverter2.exists else []
+            case "inv2_on_inv1_failure":
+                return [(c.inverter1, False)]
+            case "inv1_manual" | "inv1_manual_inv2_on":
+                return [(c.inverter1, True)]
+            case "both_manual":
+                return [(i, True) for i in all_inv]
+            case "both_manual_tower1":
+                return [(i, True) for i in t1_inv]
+            case "inv2_manual" | "inv2_manual_inv1_on":
+                return [(c.inverter2, True)] if c.inverter2.exists else []
+            case "inv3_on_inv4_failure":
+                return [(c.inverter4, False)] if c.inverter4.exists else []
+            case "inv4_on_inv3_failure":
+                return [(c.inverter3, False)] if c.inverter3.exists else []
+            case "inv3_manual" | "inv3_manual_inv4_on":
+                return [(c.inverter3, True)] if c.inverter3.exists else []
+            case "both_manual_tower2":
+                return [(i, True) for i in t2_inv]
+            case "inv4_manual" | "inv4_manual_inv3_on":
+                return [(c.inverter4, True)] if c.inverter4.exists else []
+            case _:
+                return []
 
     async def _apply_protection_state(self, system_state: str) -> None:
         """Apply side effects for protection-state transitions."""
@@ -467,27 +829,22 @@ class BK215HybridController:
         self.state.last_error = 0.0
         self.state.last_target = 0.0
 
-        if system_state in {"soc_low", "inv_off", "failure"}:
-            await self._async_shutdown_inverter(self.config.inverter1)
-            if self.config.inverter2.exists:
-                await self._async_shutdown_inverter(self.config.inverter2)
-            self.state.boost_enabled = False
-            return
+        for inverter, only_if_running in self._get_shutdown_targets(system_state):
+            if not only_if_running or self._helper_state_for(inverter):
+                await self._async_shutdown_inverter(inverter)
 
-        if system_state == "inv1_on_inv2_failure" and self.config.inverter2.exists:
-            await self._async_shutdown_inverter(self.config.inverter2)
-            self.state.boost_enabled = False
-            return
-
-        if system_state == "inv2_on_inv1_failure":
-            await self._async_shutdown_inverter(self.config.inverter1)
-            self.state.boost_enabled = False
+        self.state.boost_enabled = False
 
     async def _ensure_safe_outputs(self) -> None:
         """Ensure all inverter setpoints are at their safe fallback values."""
-        await self._async_set_inverter_output(self.config.inverter1, 0.0)
-        if self.config.inverter2.exists:
+        if not self._is_manual(self.config.inverter1):
+            await self._async_set_inverter_output(self.config.inverter1, 0.0)
+        if self.config.inverter2.exists and not self._is_manual(self.config.inverter2):
             await self._async_set_inverter_output(self.config.inverter2, 0.0)
+        if self.config.inverter3.exists and not self._is_manual(self.config.inverter3):
+            await self._async_set_inverter_output(self.config.inverter3, 0.0)
+        if self.config.inverter4.exists and not self._is_manual(self.config.inverter4):
+            await self._async_set_inverter_output(self.config.inverter4, 0.0)
 
     async def _async_shutdown_inverter(self, inverter: InverterConfig) -> None:
         """Reset one inverter and switch it off."""
@@ -543,23 +900,37 @@ class BK215HybridController:
         """Apply boost output distribution."""
         inv1_on = self.state.inverter1_helper
         inv2_on = self.state.inverter2_helper if self.config.inverter2.exists else False
-        p_sum = (self.config.inverter1.rated_power if inv1_on else 0.0) + (
-            self.config.inverter2.rated_power if inv2_on else 0.0
+        inv3_on = self.state.inverter3_helper if self.config.inverter3.exists else False
+        inv4_on = self.state.inverter4_helper if self.config.inverter4.exists else False
+        p_sum = (
+            (self.config.inverter1.rated_power if inv1_on else 0.0)
+            + (self.config.inverter2.rated_power if inv2_on else 0.0)
+            + (self.config.inverter3.rated_power if inv3_on else 0.0)
+            + (self.config.inverter4.rated_power if inv4_on else 0.0)
         )
         p_max_pow_inv = self.max_power_inverter_value
         boost_power = min(p_sum, p_max_pow_inv)
+        if boost_power <= 0:
+            return  # No active inverters — nothing to boost
 
-        p1, p2 = self._split_target(boost_power, inv1_on, inv2_on)
-        await self._async_set_inverter_output(
-            self.config.inverter1,
-            p1,
-            deye_threshold=DEYE_BOOST_HYSTERESIS,
+        p1, p2, p3, p4 = self._split_target(
+            boost_power, inv1_on, inv2_on, inv3_on, inv4_on
         )
-        if self.config.inverter2.exists:
+        if not self._is_manual(self.config.inverter1):
             await self._async_set_inverter_output(
-                self.config.inverter2,
-                p2,
-                deye_threshold=DEYE_BOOST_HYSTERESIS,
+                self.config.inverter1, p1, deye_threshold=DEYE_BOOST_HYSTERESIS
+            )
+        if self.config.inverter2.exists and not self._is_manual(self.config.inverter2):
+            await self._async_set_inverter_output(
+                self.config.inverter2, p2, deye_threshold=DEYE_BOOST_HYSTERESIS
+            )
+        if self.config.inverter3.exists and not self._is_manual(self.config.inverter3):
+            await self._async_set_inverter_output(
+                self.config.inverter3, p3, deye_threshold=DEYE_BOOST_HYSTERESIS
+            )
+        if self.config.inverter4.exists and not self._is_manual(self.config.inverter4):
+            await self._async_set_inverter_output(
+                self.config.inverter4, p4, deye_threshold=DEYE_BOOST_HYSTERESIS
             )
 
         self.state.integral = 0.0
@@ -583,16 +954,25 @@ class BK215HybridController:
 
         inv1_on = self.state.inverter1_helper
         inv2_on = self.state.inverter2_helper if self.config.inverter2.exists else False
-        p_sum = (self.config.inverter1.rated_power if inv1_on else 0.0) + (
-            self.config.inverter2.rated_power if inv2_on else 0.0
+        inv3_on = self.state.inverter3_helper if self.config.inverter3.exists else False
+        inv4_on = self.state.inverter4_helper if self.config.inverter4.exists else False
+        p_sum = (
+            (self.config.inverter1.rated_power if inv1_on else 0.0)
+            + (self.config.inverter2.rated_power if inv2_on else 0.0)
+            + (self.config.inverter3.rated_power if inv3_on else 0.0)
+            + (self.config.inverter4.rated_power if inv4_on else 0.0)
         )
         p_max_pow_inv = self.max_power_inverter_value
         p_max_pow = min(p_sum, p_max_pow_inv)
+        if p_max_pow <= 0:
+            return  # No active inverters — do not update state
         p_min_pow = self._calculate_min_power()
 
         inv1_current = self._current_inverter_power(self.config.inverter1, inv1_on)
         inv2_current = self._current_inverter_power(self.config.inverter2, inv2_on)
-        total_curr = inv1_current + inv2_current
+        inv3_current = self._current_inverter_power(self.config.inverter3, inv3_on)
+        inv4_current = self._current_inverter_power(self.config.inverter4, inv4_on)
+        total_curr = inv1_current + inv2_current + inv3_current + inv4_current
         error = self.state.deadband_filtered_error
 
         kp_err_factor = min(
@@ -630,7 +1010,9 @@ class BK215HybridController:
         target_p_raw = self.state.last_target + sorted([-delta_down, diff, delta_up])[1]
         target_p = max(p_min_pow, min(target_p_raw, p_max_pow))
 
-        p1, p2 = self._split_target(target_p, inv1_on, inv2_on)
+        p1, p2, p3, p4 = self._split_target(
+            target_p, inv1_on, inv2_on, inv3_on, inv4_on
+        )
         prev_inv1 = (
             self._get_float(self.config.inverter1.control_entity)
             if inv1_on and self.config.inverter1.control_entity
@@ -641,24 +1023,48 @@ class BK215HybridController:
             if inv2_on and self.config.inverter2.control_entity
             else 0.0
         )
-        await self._async_set_inverter_output(
-            self.config.inverter1,
-            p1,
-            deye_threshold=DEYE_PID_HYSTERESIS,
+        prev_inv3 = (
+            self._get_float(self.config.inverter3.control_entity)
+            if inv3_on and self.config.inverter3.control_entity
+            else 0.0
         )
-        if self.config.inverter2.exists:
+        prev_inv4 = (
+            self._get_float(self.config.inverter4.control_entity)
+            if inv4_on and self.config.inverter4.control_entity
+            else 0.0
+        )
+        if not self._is_manual(self.config.inverter1):
             await self._async_set_inverter_output(
-                self.config.inverter2,
-                p2,
-                deye_threshold=DEYE_PID_HYSTERESIS,
+                self.config.inverter1, p1, deye_threshold=DEYE_PID_HYSTERESIS
+            )
+        if self.config.inverter2.exists and not self._is_manual(self.config.inverter2):
+            await self._async_set_inverter_output(
+                self.config.inverter2, p2, deye_threshold=DEYE_PID_HYSTERESIS
+            )
+        if self.config.inverter3.exists and not self._is_manual(self.config.inverter3):
+            await self._async_set_inverter_output(
+                self.config.inverter3, p3, deye_threshold=DEYE_PID_HYSTERESIS
+            )
+        if self.config.inverter4.exists and not self._is_manual(self.config.inverter4):
+            await self._async_set_inverter_output(
+                self.config.inverter4, p4, deye_threshold=DEYE_PID_HYSTERESIS
             )
 
         val_inv1 = self._target_control_value(self.config.inverter1, p1, inv1_on)
         val_inv2 = self._target_control_value(self.config.inverter2, p2, inv2_on)
-        if self._entering_run_mode(
-            self.config.inverter1, prev_inv1, val_inv1, inv1_on
-        ) or self._entering_run_mode(
-            self.config.inverter2, prev_inv2, val_inv2, inv2_on
+        val_inv3 = self._target_control_value(self.config.inverter3, p3, inv3_on)
+        val_inv4 = self._target_control_value(self.config.inverter4, p4, inv4_on)
+        if (
+            self._entering_run_mode(self.config.inverter1, prev_inv1, val_inv1, inv1_on)
+            or self._entering_run_mode(
+                self.config.inverter2, prev_inv2, val_inv2, inv2_on
+            )
+            or self._entering_run_mode(
+                self.config.inverter3, prev_inv3, val_inv3, inv3_on
+            )
+            or self._entering_run_mode(
+                self.config.inverter4, prev_inv4, val_inv4, inv4_on
+            )
         ):
             self.state.hold_until = now_monotonic + self.config.hold_time
             self.state.integral = 0.0
@@ -696,25 +1102,43 @@ class BK215HybridController:
         return self._get_float(inverter.control_entity)
 
     def _split_target(
-        self, target_power: float, inv1_on: bool, inv2_on: bool
-    ) -> tuple[float, float]:
-        """Split target power proportionally between active inverters."""
-        total = (self.config.inverter1.rated_power if inv1_on else 0.0) + (
-            self.config.inverter2.rated_power if inv2_on else 0.0
+        self,
+        target_power: float,
+        inv1_on: bool,
+        inv2_on: bool,
+        inv3_on: bool = False,
+        inv4_on: bool = False,
+    ) -> tuple[float, float, float, float]:
+        """Split target power proportionally between all active inverters."""
+        total = (
+            (self.config.inverter1.rated_power if inv1_on else 0.0)
+            + (self.config.inverter2.rated_power if inv2_on else 0.0)
+            + (self.config.inverter3.rated_power if inv3_on else 0.0)
+            + (self.config.inverter4.rated_power if inv4_on else 0.0)
         )
         if total <= 0.0:
-            return 0.0, 0.0
+            return 0.0, 0.0, 0.0, 0.0
         p1 = (
-            target_power * (self.config.inverter1.rated_power / total)
+            round(target_power * self.config.inverter1.rated_power / total, 1)
             if inv1_on
             else 0.0
         )
         p2 = (
-            target_power * (self.config.inverter2.rated_power / total)
+            round(target_power * self.config.inverter2.rated_power / total, 1)
             if inv2_on
             else 0.0
         )
-        return round(p1, 1), round(p2, 1)
+        p3 = (
+            round(target_power * self.config.inverter3.rated_power / total, 1)
+            if inv3_on
+            else 0.0
+        )
+        p4 = (
+            round(target_power * self.config.inverter4.rated_power / total, 1)
+            if inv4_on
+            else 0.0
+        )
+        return p1, p2, p3, p4
 
     async def _async_set_inverter_output(
         self,
