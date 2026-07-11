@@ -26,6 +26,8 @@ class BK215HybridControllerSwitchEntityDescription(SwitchEntityDescription):
     setter: str
     option_key: str | None = None
     requires_inverter2: bool = False
+    requires_inverter3: bool = False
+    requires_inverter4: bool = False
 
 
 SWITCH_DESCRIPTIONS: tuple[BK215HybridControllerSwitchEntityDescription, ...] = (
@@ -51,6 +53,7 @@ SWITCH_DESCRIPTIONS: tuple[BK215HybridControllerSwitchEntityDescription, ...] = 
         name=None,
         translation_key="inverter1_helper",
         entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
         enabled_attr="inverter1_helper_enabled",
         setter="async_set_inverter1_helper",
     ),
@@ -59,9 +62,69 @@ SWITCH_DESCRIPTIONS: tuple[BK215HybridControllerSwitchEntityDescription, ...] = 
         name=None,
         translation_key="inverter2_helper",
         entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
         enabled_attr="inverter2_helper_enabled",
         setter="async_set_inverter2_helper",
         requires_inverter2=True,
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="inverter1_manual",
+        name=None,
+        translation_key="inverter1_manual",
+        entity_category=EntityCategory.CONFIG,
+        enabled_attr="inverter1_manual_enabled",
+        setter="async_set_inverter1_manual",
+        option_key="inverter1_manual",
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="inverter2_manual",
+        name=None,
+        translation_key="inverter2_manual",
+        entity_category=EntityCategory.CONFIG,
+        enabled_attr="inverter2_manual_enabled",
+        setter="async_set_inverter2_manual",
+        option_key="inverter2_manual",
+        requires_inverter2=True,
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="inverter3_helper",
+        name=None,
+        translation_key="inverter3_helper",
+        entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
+        enabled_attr="inverter3_helper_enabled",
+        setter="async_set_inverter3_helper",
+        requires_inverter3=True,
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="inverter4_helper",
+        name=None,
+        translation_key="inverter4_helper",
+        entity_category=EntityCategory.CONFIG,
+        entity_registry_enabled_default=False,
+        enabled_attr="inverter4_helper_enabled",
+        setter="async_set_inverter4_helper",
+        requires_inverter4=True,
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="inverter3_manual",
+        name=None,
+        translation_key="inverter3_manual",
+        entity_category=EntityCategory.CONFIG,
+        enabled_attr="inverter3_manual_enabled",
+        setter="async_set_inverter3_manual",
+        option_key="inverter3_manual",
+        requires_inverter3=True,
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="inverter4_manual",
+        name=None,
+        translation_key="inverter4_manual",
+        entity_category=EntityCategory.CONFIG,
+        enabled_attr="inverter4_manual_enabled",
+        setter="async_set_inverter4_manual",
+        option_key="inverter4_manual",
+        requires_inverter4=True,
     ),
 )
 
@@ -77,6 +140,8 @@ async def async_setup_entry(
         BK215HybridControllerHelperSwitch(controller, entry, description)
         for description in SWITCH_DESCRIPTIONS
         if not description.requires_inverter2 or controller.has_inverter2
+        if not description.requires_inverter3 or controller.has_inverter3
+        if not description.requires_inverter4 or controller.has_inverter4
     ]
     async_add_entities(entities)
 
