@@ -34,6 +34,7 @@ class BK215HybridControllerNumberEntityDescription(NumberEntityDescription):
     value_attr: str
     setter: str
     option_key: str
+    requires_tower2: bool = False
 
 
 NUMBER_DESCRIPTIONS: tuple[BK215HybridControllerNumberEntityDescription, ...] = (
@@ -52,13 +53,28 @@ NUMBER_DESCRIPTIONS: tuple[BK215HybridControllerNumberEntityDescription, ...] = 
         option_key="charge_limit_start",
     ),
     BK215HybridControllerNumberEntityDescription(
+        key="charge_limit_start_2",
+        name=None,
+        translation_key="charge_limit_start_2",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=10,
+        native_max_value=100,
+        native_step=1,
+        native_unit_of_measurement="%",
+        mode=NumberMode.BOX,
+        value_attr="charge_limit_start_2_value",
+        setter="async_set_charge_limit_start_2",
+        option_key="charge_limit_start_2",
+        requires_tower2=True,
+    ),
+    BK215HybridControllerNumberEntityDescription(
         key="max_power_inverter",
         name=None,
         translation_key="max_power_inverter",
         entity_category=EntityCategory.CONFIG,
         native_min_value=0,
         native_max_value=1600,
-        native_step=1,
+        native_step=10,
         native_unit_of_measurement=UnitOfPower.WATT,
         mode=NumberMode.BOX,
         value_attr="max_power_inverter_value",
@@ -72,7 +88,7 @@ NUMBER_DESCRIPTIONS: tuple[BK215HybridControllerNumberEntityDescription, ...] = 
         entity_category=EntityCategory.CONFIG,
         native_min_value=0,
         native_max_value=600,
-        native_step=1,
+        native_step=10,
         native_unit_of_measurement=UnitOfPower.WATT,
         mode=NumberMode.BOX,
         value_attr="min_power_inverter_value",
@@ -134,6 +150,7 @@ async def async_setup_entry(
     async_add_entities(
         BK215HybridControllerNumber(controller, entry, description)
         for description in NUMBER_DESCRIPTIONS
+        if not description.requires_tower2 or controller.config.tower2_enabled
     )
 
 
@@ -170,6 +187,8 @@ class BK215HybridControllerNumber(NumberEntity):
         if value is None:
             match self.entity_description.option_key:
                 case "charge_limit_start":
+                    return int(DEFAULT_CHARGE_LIMIT_START)
+                case "charge_limit_start_2":
                     return int(DEFAULT_CHARGE_LIMIT_START)
                 case "max_power_inverter":
                     return int(DEFAULT_MAX_POWER_INVERTER)
