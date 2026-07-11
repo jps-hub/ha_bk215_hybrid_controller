@@ -1,14 +1,16 @@
 {
   "config": {
     "error": {
-      "unknown": "Die Controller-Konfiguration konnte nicht erstellt werden. Prüfe das Home-Assistant-Protokoll für Details."
+      "unknown": "Die Controller-Konfiguration konnte nicht erstellt werden. Prüfe das Home-Assistant-Protokoll für Details.",
+      "tower2_incomplete": "Alle drei Turm-2-Entitäten müssen ausgefüllt oder alle Felder leer gelassen werden."
     },
     "step": {
       "user": {
         "data": {
-          "avg_battery_soc": "Entität Speicherlevel Turm",
-          "discharge_limit_a": "Entität BK Entladegrenze",
-          "discharge_limit_b": "Entität HW-Entladegrenze z.B. Kopf HW-Entladegrenze",
+          "name": "Name",
+          "avg_battery_soc": "Entität Speicherlevel Turm 1",
+          "discharge_limit_a": "Entität BK Entladegrenze Turm 1",
+          "discharge_limit_b": "Entität HW-Entladegrenze Turm 1 z.B. Kopf HW-Entladegrenze",
           "power_sensor_entity": "Entität Shelly oder anderer Sensor für die aktuelle Leistung",
           "interval_seconds": "Regelintervall",
           "deadband_min": "Deadband-Minimum (-20W Standard / 1 APs -50W / 2 APs -100W)",
@@ -28,7 +30,7 @@
           "switch_entity": "Ein/Aus Schalter Wechselrichter",
           "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
         },
-        "title": "Wechselrichter 1"
+        "title": "Wechselrichter 1 (Turm 1)"
       },
       "inverter2": {
         "data": {
@@ -39,7 +41,7 @@
           "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
         },
         "description": "Lasse alle Felder leer, wenn du keinen zweiten Wechselrichter verwendest.",
-        "title": "Wechselrichter 2"
+        "title": "Wechselrichter 2 (Turm 1 - optional)"
       },
       "pid": {
         "data": {
@@ -53,6 +55,36 @@
           "kd_max": "Kd-Maximum (Startwert 0.35)"
         },
         "title": "PID-Einstellungen"
+      },
+      "tower2": {
+        "data": {
+          "avg_battery_soc_2": "Entität Speicherlevel Turm 2 (optional)",
+          "discharge_limit_a_2": "Entität BK Entladegrenze Turm 2 (optional)",
+          "discharge_limit_b_2": "Entität HW-Entladegrenze Turm 2 z.B. Kopf HW-Entladegrenze (optional)"
+        },
+        "description": "Lasse alle Felder leer, wenn kein zweiter Turm verwendet wird.",
+        "title": "Turm 2 (optional)"
+      },
+      "inverter3": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "title": "Wechselrichter 3 (Turm 2)"
+      },
+      "inverter4": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "description": "Lasse alle Felder leer, wenn du keinen vierten Wechselrichter verwendest.",
+        "title": "Wechselrichter 4 (Turm 2 - optional)"
       }
     }
   },
@@ -60,9 +92,9 @@
     "step": {
       "init": {
         "data": {
-          "avg_battery_soc": "Entität Speicherlevel Turm",
-          "discharge_limit_a": "Entität BK Entladegrenze",
-          "discharge_limit_b": "Entität HW-Entladegrenze z.B. Kopf HW-Entladegrenze",
+          "avg_battery_soc": "Entität Speicherlevel Turm 1",
+          "discharge_limit_a": "Entität BK Entladegrenze Turm 1",
+          "discharge_limit_b": "Entität HW-Entladegrenze Turm 1 z.B. Kopf HW-Entladegrenze",
           "power_sensor_entity": "Entität Shelly oder anderer Sensor für die aktuelle Leistung",
           "interval_seconds": "Regelintervall",
           "buffer_soc": "Pufferwert für Entladegrenze",
@@ -80,7 +112,7 @@
           "switch_entity": "Ein/Aus Schalter Wechselrichter",
           "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
         },
-        "title": "Wechselrichter 1"
+        "title": "Wechselrichter 1 (Turm 1)"
       },
       "inverter2": {
         "data": {
@@ -91,7 +123,7 @@
           "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
         },
         "description": "Lasse alle Felder leer, wenn du keinen zweiten Wechselrichter verwendest.",
-        "title": "Wechselrichter 2"
+        "title": "Wechselrichter 2 (Turm 1 - optional)"
       },
       "pid": {
         "data": {
@@ -105,42 +137,105 @@
           "kd_max": "Kd-Maximum (Startwert 0.35)"
         },
         "title": "PID-Einstellungen"
+      },
+      "tower2": {
+        "data": {
+          "avg_battery_soc_2": "Speicherlevel Turm 2 (optional)",
+          "discharge_limit_a_2": "Entität BK Entladegrenze Turm 2 (optional)",
+          "discharge_limit_b_2": "Entität HW-Entladegrenze Turm 2 (optional)"
+        },
+        "description": "Lasse alle Felder leer, wenn du keinen zweiten Turm hast.",
+        "title": "Turm 2 (optional)"
+      },
+      "inverter3": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "title": "Wechselrichter 3 (Turm 2)"
+      },
+      "inverter4": {
+        "data": {
+          "inverter_type": "Wechselrichtertyp",
+          "control_entity": "Entität zur Leistungssteuerung (active power regulation / output limit)",
+          "rated_power": "Nennleistung",
+          "switch_entity": "Ein/Aus Schalter Wechselrichter",
+          "power_sensor_entity": "Entität für aktuelle Leistung Wechselrichter (NUR bei APsystems erforderlich)"
+        },
+        "description": "Lasse alle Felder leer, wenn du keinen vierten Wechselrichter verwendest.",
+        "title": "Wechselrichter 4 (Turm 2 - optional)"
       }
     }
   },
   "entity": {
     "binary_sensor": {
       "automatic_active": {
-        "name": "Automatik aktiv"
+        "name": "Automatik"
       },
       "boost_active": {
-        "name": "Boost aktiv"
+        "name": "Boost"
       },
-      "inverter1_active": {
-        "name": "Wechselrichter 1 aktiv"
+      "inverter1_helper_active": {
+        "name": "WR 1 Helfer"
       },
-      "inverter2_active": {
-        "name": "Wechselrichter 2 aktiv"
+      "inverter2_helper_active": {
+        "name": "WR 2 Helfer"
+      },
+      "inverter1_switch": {
+        "name": "WR 1 Schalter"
+      },
+      "inverter2_switch": {
+        "name": "WR 2 Schalter"
+      },
+      "inverter1_manual": {
+        "name": "WR 1 manuell"
+      },
+      "inverter2_manual": {
+        "name": "WR 2 manuell"
+      },
+      "inverter3_helper_active": {
+        "name": "WR 3 Helfer"
+      },
+      "inverter4_helper_active": {
+        "name": "WR 4 Helfer"
+      },
+      "inverter3_switch": {
+        "name": "WR 3 Schalter"
+      },
+      "inverter4_switch": {
+        "name": "WR 4 Schalter"
+      },
+      "inverter3_manual": {
+        "name": "WR 3 manuell"
+      },
+      "inverter4_manual": {
+        "name": "WR 4 manuell"
       }
     },
     "number": {
       "charge_limit_start": {
-        "name": "Grenzwert Start der Einspeisung"
+        "name": "Startwert Einspeisung Turm 1"
       },
       "max_power_inverter": {
-        "name": "Maximale Wechselrichterleistung"
+        "name": "Max WR-Leistung"
       },
       "min_power_inverter": {
-        "name": "Minimale Wechselrichterleistung"
+        "name": "Min WR-Leistung"
       },
       "offset": {
         "name": "Offset Leistungssensor"
       },
       "deadband_min": {
-        "name": "Deadband-Minimum"
+        "name": "Deadband min"
       },
       "deadband_max": {
-        "name": "Deadband-Maximum"
+        "name": "Deadband max"
+      },
+      "charge_limit_start_2": {
+        "name": "Startwert Einspeisung Turm 2"
       }
     },
     "sensor": {
@@ -153,7 +248,22 @@
           "soc_low": "Speicherstand niedrig",
           "failure": "Fehler",
           "inv1_on_inv2_failure": "WR 1 an, WR 2 Fehler",
-          "inv2_on_inv1_failure": "WR 2 an, WR 1 Fehler"
+          "inv2_on_inv1_failure": "WR 2 an, WR 1 Fehler",
+          "inv1_manual": "WR 1 manuell",
+          "inv1_manual_inv2_on": "WR 1 manuell, WR 2 an",
+          "inv2_manual": "WR 2 manuell",
+          "inv2_manual_inv1_on": "WR 2 manuell, WR 1 an",
+          "tower1_soc_low": "Turm 1 Speicherstand niedrig",
+          "tower2_soc_low": "Turm 2 Speicherstand niedrig",
+          "inv3_on_inv4_failure": "WR 3 an, WR 4 Fehler",
+          "inv4_on_inv3_failure": "WR 4 an, WR 3 Fehler",
+          "inv3_manual": "WR 3 manuell",
+          "inv3_manual_inv4_on": "WR 3 manuell, WR 4 an",
+          "inv4_manual": "WR 4 manuell",
+          "inv4_manual_inv3_on": "WR 4 manuell, WR 3 an",
+          "both_manual_tower2": "Beide WR Turm 2 manuell",
+          "both_manual_tower1": "Beide WR Turm 1 manuell",
+          "both_manual": "Alle WR manuell"
         }
       },
       "deadband_state": {
@@ -189,6 +299,24 @@
       },
       "inverter2_helper": {
         "name": "WR 2 Helfer"
+      },
+      "inverter1_manual": {
+        "name": "WR 1 manuell"
+      },
+      "inverter2_manual": {
+        "name": "WR 2 manuell"
+      },
+      "inverter3_helper": {
+        "name": "WR 3 Helfer"
+      },
+      "inverter4_helper": {
+        "name": "WR 4 Helfer"
+      },
+      "inverter3_manual": {
+        "name": "WR 3 manuell"
+      },
+      "inverter4_manual": {
+        "name": "WR 4 manuell"
       }
     }
   }
