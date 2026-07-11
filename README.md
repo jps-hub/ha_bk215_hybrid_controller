@@ -1,5 +1,7 @@
 🇬🇧 [English](#english) · 🇩🇪 [Deutsch](#deutsch)
 
+<a href="https://buymeacoffee.com/jpshub" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a> <a href="https://www.paypal.me/JPSAutomatisierung" target="_blank"><img src="https://raw.githubusercontent.com/stefan-niedermann/paypal-donate-button/master/paypal-donate-button.png" alt="Donate with PayPal" height="50" width="129"></a>
+
 ---
 
 <a name="english"></a>
@@ -15,19 +17,16 @@
 
 A Home Assistant custom integration that replaces the script-based JPS controller with a fully integrated, UI-configurable controller.
 
-It connects a battery tower (e.g. BK215) and one or two microinverters (e.g. Deye) to achieve
-near-zero grid feed-in using a PID-based control loop.
+It connects one or two battery towers (e.g. BK215) and up to four microinverters (e.g. Deye) to achieve near-zero grid feed-in using a PID-based control loop.
 
 ---
 
 ## Requirements
 
-- Home Assistant 2024.1 or newer
-- At least one inverter that exposes a power control entity (number entity for
-  active power regulation or output limit percentage)
+- Home Assistant 2026.1 or newer
+- At least one inverter with a power control entity (number entity for active power regulation or output limit percentage)
 - A grid power sensor (e.g. Shelly EM)
-- A battery SOC sensor
-- Discharge limit entities for the battery cabinet and the hybrid inverter
+- At least one BK215(Plus) with SOC sensor and discharge limit entities
 
 ---
 
@@ -60,23 +59,24 @@ near-zero grid feed-in using a PID-based control loop.
 
 ## Setup
 
-The setup wizard has four steps:
+The setup wizard has the following steps:
 
 ### Step 1 — General settings
 
 | Field | Description | Default |
 |---|---|---|
-| Battery tower level entity | SOC sensor of the battery tower | — |
-| Battery cabinet discharge limit entity | Number entity for the battery discharge limit | — |
-| Hybrid inverter discharge limit entity | Sensor or number entity for the inverter discharge limit | — |
+| Name | Name of the configuration entry | BK215 Hybrid Controller by JPS |
+| Battery tower 1 level entity | SOC sensor of battery tower 1 | — |
+| Battery cabinet discharge limit entity tower 1 | Entity for the storage discharge limit of tower 1 | — |
+| Hybrid inverter discharge limit entity tower 1 | Sensor for the inverter discharge limit of tower 1, e.g. main hybrid inverter discharge limit | — |
 | Power sensor entity | Grid power sensor (positive = import, negative = export) | — |
-| Control interval | How often the controller runs in seconds | 3 s |
-| Deadband minimum | Lower grid power threshold before the controller acts (export side) | −20 W |
-| Deadband maximum | Upper grid power threshold before the controller acts (import side) | 20 W |
-| Buffer SOC | Safety margin added to the discharge limit for the SOC check | 3 % |
-| Limit for the maximum inverter power limit | Hard ceiling for the max power number entity | 800 W |
-| Limit for the minimum inverter power limit | Hard floor for the min power number entity | 600 W |
-| Startup delay | Hold time after ramping an inverter from 0 to active power | 30 s |
+| Control interval | Execution interval of the controller in seconds | 3 s |
+| Deadband minimum | Lower grid power threshold (export side) | −20 W |
+| Deadband maximum | Upper grid power threshold (import side) | 20 W |
+| Buffer value for discharge limit | Safety margin added to the discharge limit for the SOC check | 3 % |
+| Limit for maximum inverter power limit | Hard ceiling for the max power number entity | 800 W |
+| Limit for minimum inverter power limit | Hard ceiling for the max value of min inverter power | 600 W |
+| Startup delay when regulating from 0% to x% | Hold time after ramping an inverter from 0 to active power | 30 s |
 
 **Recommended deadband values by configuration:**
 
@@ -86,36 +86,52 @@ The setup wizard has four steps:
 | 1× APsystems | −50 W | 20 W |
 | 2× APsystems | −100 W | 20 W |
 
-### Step 2 — Inverter 1
+### Step 2 — Inverter 1 (Tower 1)
 
 | Field | Description |
 |---|---|
 | Inverter type | `Deye` (output limit 0–100 %) or `APsystems` (direct watt control) |
-| Entity for power control | Number entity used to set the inverter output |
+| Entity for power control | Entity used to set the inverter output |
 | Rated power | Maximum inverter power in watts |
 | On/off inverter switch | Switch entity to turn the inverter on and off |
-| Current inverter power entity | Power sensor (required for APsystems only) |
+| Entity for current inverter power | Power sensor entity (required for APsystems only) |
 
-### Step 3 — Inverter 2 (optional)
+### Step 3 — Inverter 2 (Tower 1 - optional)
 
 Same fields as Inverter 1. Leave all fields empty if no second inverter is used.
 
-### Step 4 — PID settings
+### Step 4 — Tower 2 (optional)
 
-The PID controller uses a variable proportional gain (Kp) that scales with the
-error magnitude. Advanced users can adjust the parameters here; the defaults
-work well for most setups.
+Leave all fields empty if no second tower is used. Either all three fields must be filled or all must be left empty.
 
-| Parameter | Default | Description |
-|---|---|---|
-| Kp min | 0.4 | Minimum proportional gain (small errors) |
-| Kp max | 0.9 | Maximum proportional gain (large errors) |
-| Kp error scale | 600 | Error value at which Kp reaches its maximum |
-| Ki | 0.02 | Integral gain |
-| Kd | 0.12 | Derivative gain |
-| Kd error scale | 300 | Error scale for derivative gain reduction |
-| Kd dt reference | 3 | Reference time step for derivative normalisation |
-| Kd max | 0.35 | Maximum derivative contribution |
+| Field | Description |
+|---|---|
+| Battery tower 2 level entity | SOC sensor of battery tower 2 |
+| Battery cabinet discharge limit entity tower 2 | Entity for the storage discharge limit of tower 2 |
+| Hybrid inverter discharge limit entity tower 2 | Sensor for the inverter discharge limit of tower 2 |
+
+### Step 5 — Inverter 3 (Tower 2) — only shown if tower 2 is configured
+
+Same fields as Inverter 1.
+
+### Step 6 — Inverter 4 (Tower 2 - optional) — only shown if tower 2 is configured
+
+Same fields as Inverter 1. Leave all fields empty if no fourth inverter is used.
+
+### Step 7 — PID settings
+
+The PID controller uses a variable proportional gain (Kp) that scales with the error magnitude. The defaults work well for most setups. When tower 2 is configured, different defaults are pre-filled.
+
+| Parameter | Default (1 tower) | Default (2 towers) | Description |
+|---|---|---|---|
+| Kp min | 0.4 | 0.4 | Minimum proportional gain (small errors) |
+| Kp max | 0.9 | 0.65 | Maximum proportional gain (large errors) |
+| Kp error scale | 600 | 600 | Error value at which Kp reaches its maximum |
+| Ki | 0.02 | 0.06 | Integral gain |
+| Kd | 0.12 | 0.55 | Derivative gain |
+| Kd error scale | 300 | 300 | Error scale for derivative gain reduction |
+| Kd dt reference | 3 | 2 | Reference time step for derivative normalisation |
+| Kd max | 0.35 | 0.35 | Maximum derivative contribution |
 
 ---
 
@@ -127,17 +143,24 @@ work well for most setups.
 |---|---|
 | **Automatic** | Enables or disables the control loop. Persisted across restarts. |
 | **Boost** | Sets all active inverters to their rated power immediately. Only available when Automatic is on. |
-| **Inverter 1 helper** | Internal on/off state tracked by the controller for inverter 1. |
-| **Inverter 2 helper** | Internal on/off state tracked by the controller for inverter 2 (only shown if a second inverter is configured). |
+| **Inverter 1 manual disable** | Puts inverter 1 into manual mode. The inverter is switched off and can then be controlled outside the integration. |
+| **Inverter 2 manual disable** | Puts inverter 2 into manual mode. Same behaviour (only shown if configured). |
+| **Inverter 3 manual disable** | Puts inverter 3 into manual mode. Same behaviour (only shown if configured). |
+| **Inverter 4 manual disable** | Puts inverter 4 into manual mode. Same behaviour (only shown if configured). |
+| **Inverter 1 helper** | Internal on/off state tracked by the controller for inverter 1 (hidden by default). |
+| **Inverter 2 helper** | Whether the controller considers inverter 2 to be on (only shown if configured, hidden by default). |
+| **Inverter 3 helper** | Whether the controller considers inverter 3 to be on (only shown if configured, hidden by default). |
+| **Inverter 4 helper** | Whether the controller considers inverter 4 to be on (only shown if configured, hidden by default). |
 
 ### Numbers (config category)
 
 | Entity | Unit | Description |
 |---|---|---|
-| **Feed-in start threshold** | % | Minimum SOC required before the controller starts the inverters. |
-| **Max power inverter** | W | Upper power limit sent to inverters. Capped by the configured max power limit. |
-| **Min power inverter** | W | Lower power limit; prevents inverters from operating below a useful threshold. |
-| **Power sensor offset** | W | Correction value added to the grid sensor reading. |
+| **Feed-in start threshold tower 1** | % | Minimum SOC of tower 1 required before the controller starts inverters 1/2. |
+| **Feed-in start threshold tower 2** | % | Minimum SOC of tower 2 required before the controller starts inverters 3/4 (only shown if tower 2 configured). |
+| **Max inverter power** | W | Upper power limit sent to inverters. Capped by the configured max power limit. |
+| **Min inverter power** | W | Lower power limit; prevents inverters from operating below a useful threshold. |
+| **Power sensor offset** | W | Correction value added to/subtracted from the grid power reading. |
 | **Deadband minimum** | W | Lower deadband boundary (export side). |
 | **Deadband maximum** | W | Upper deadband boundary (import side). |
 
@@ -159,19 +182,44 @@ work well for most setups.
 | `Inactive` | Automatic mode is off. |
 | `Inverter off` | SOC below start threshold; inverters are off. |
 | `Inverter on` | Normal operation; all configured inverters are running. |
-| `Battery level low` | SOC dropped below the discharge limit + buffer; inverters shut down. |
-| `Failure` | Both inverters are unexpectedly off during normal operation. |
+| `Battery level low` | SOC of both towers below discharge limit + buffer; all inverters shut down. |
+| `Tower 1 battery level low` | SOC of tower 1 below limit; inverters 1/2 shut down, tower 2 continues. |
+| `Tower 2 battery level low` | SOC of tower 2 below limit; inverters 3/4 shut down, tower 1 continues. |
+| `Failure` | Inverters are unexpectedly off during normal operation. |
 | `Inverter 1 on, inverter 2 failure` | Inverter 2 turned off unexpectedly; controller continues with inverter 1 only. |
 | `Inverter 2 on, inverter 1 failure` | Inverter 1 turned off unexpectedly; controller continues with inverter 2 only. |
+| `Inverter 3 on, inverter 4 failure` | Inverter 4 turned off unexpectedly; controller continues with inverter 3 only. |
+| `Inverter 4 on, inverter 3 failure` | Inverter 3 turned off unexpectedly; controller continues with inverter 4 only. |
+| `Inverter 1 manual` | Inverter 1 in manual mode. |
+| `Inverter 1 manual, inverter 2 on` | Inverter 1 in manual mode; controller continues with inverter 2 only. |
+| `Inverter 2 manual` | Inverter 2 in manual mode. |
+| `Inverter 2 manual, inverter 1 on` | Inverter 2 in manual mode; controller continues with inverter 1 only. |
+| `Inverter 3 manual` | Inverter 3 in manual mode. |
+| `Inverter 3 manual, inverter 4 on` | Inverter 3 in manual mode; controller continues with inverter 4 only. |
+| `Inverter 4 manual` | Inverter 4 in manual mode. |
+| `Inverter 4 manual, inverter 3 on` | Inverter 4 in manual mode; controller continues with inverter 3 only. |
+| `Both inverters tower 1 manual` | Both tower 1 inverters in manual mode. |
+| `Both inverters tower 2 manual` | Both tower 2 inverters in manual mode. |
+| `All inverters manual` | All inverters in manual mode. |
 
 ### Binary sensors (diagnostic category)
 
 | Entity | Description |
 |---|---|
-| **Automatic active** | Mirrors the Automatic switch state. |
-| **Boost active** | Mirrors the Boost switch state. |
-| **Inverter 1 active** | Whether the controller considers inverter 1 to be on. |
-| **Inverter 2 active** | Whether the controller considers inverter 2 to be on. |
+| **Automatic** | Mirrors the Automatic switch state. |
+| **Boost** | Mirrors the Boost switch state. |
+| **Inverter 1 helper** | Whether the controller considers inverter 1 to be on. |
+| **Inverter 1 manual** | Mirrors the inverter 1 manual disable switch state. |
+| **Inverter 1 switch** | Mirrors the actual state of the external inverter 1 switch. |
+| **Inverter 2 helper** | Whether the controller considers inverter 2 to be on (only shown if configured). |
+| **Inverter 2 manual** | Mirrors the inverter 2 manual disable switch state (only shown if configured). |
+| **Inverter 2 switch** | Mirrors the actual state of the external inverter 2 switch (only shown if configured). |
+| **Inverter 3 helper** | Whether the controller considers inverter 3 to be on (only shown if configured). |
+| **Inverter 3 manual** | Mirrors the inverter 3 manual disable switch state (only shown if configured). |
+| **Inverter 3 switch** | Mirrors the actual state of the external inverter 3 switch (only shown if configured). |
+| **Inverter 4 helper** | Whether the controller considers inverter 4 to be on (only shown if configured). |
+| **Inverter 4 manual** | Mirrors the inverter 4 manual disable switch state (only shown if configured). |
+| **Inverter 4 switch** | Mirrors the actual state of the external inverter 4 switch (only shown if configured). |
 
 ---
 
@@ -180,18 +228,22 @@ work well for most setups.
 ```
 Every <interval> seconds (and on relevant state changes):
 
-1. If avg_soc >= charge_limit_start  →  start inverters if not already on
+1. Tower 1 and tower 2 start checks run independently:
+   - If avg_soc_n >= charge_limit_start_n and outside protection zone
+     → start inverters of that tower if not already on
 2. Calculate system state (protection check):
-   - avg_soc <= discharge_limit + buffer_soc  →  soc_low  →  shut down
-   - Inverter unexpectedly off                →  failure state
-3. If system state is soc_low / inv_off / failure:
+   - avg_soc_1 <= discharge_limit_1 + buffer  →  tower1_soc_low  →  shut down WR1+WR2
+   - avg_soc_2 <= discharge_limit_2 + buffer  →  tower2_soc_low  →  shut down WR3+WR4
+   - Both towers low                           →  soc_low         →  shut down all
+   - Inverter unexpectedly off                 →  failure state
+3. If system state is soc_low / inv_off / failure / both_manual:
    - Set all inverter outputs to 0, turn off switches
 4. If Boost mode:
    - Set all active inverters to rated power (up to max_power_inverter)
 5. Otherwise (PID mode):
    - Deadband check: if grid power is within [deadband_min, deadband_max]  →  idle
    - PID step: calculate target power from grid error
-   - Split target proportionally between active inverters by rated power
+   - Split target proportionally between all active inverters by rated power
    - Apply hysteresis before writing to inverter control entities
 ```
 
@@ -247,11 +299,10 @@ Sie verbindet einen Batteriespeicher (z. B. BK215) und ein oder zwei Mikrowechse
 
 ## Voraussetzungen
 
-- Home Assistant 2024.1 oder neuer
+- Home Assistant 2026.1 oder neuer
 - Mindestens ein Wechselrichter mit einer Leistungssteuerungs-Entity (Number-Entity für aktive Leistungsregelung oder Ausgangsbegrenzung in Prozent)
 - Ein Netzleistungssensor (z. B. Shelly EM)
-- Ein Batterie-SOC-Sensor
-- Entladegrenzen-Entities für Batterieschrank und Hybrid-Wechselrichter
+- Mindestens ein BK215(Plus) mit SOC-Sensor und Entladegrenzen-Entities des Speichers
 
 ---
 
@@ -278,66 +329,98 @@ Sie verbindet einen Batteriespeicher (z. B. BK215) und ein oder zwei Mikrowechse
    config/custom_components/bk215_hybrid_controller/
    ```
 3. Home Assistant neu starten
-4. Die Integration über die UI hinzufügen: **Einstellungen** → **Geräte & Dienste** → **Integration hinzufügen** → Nach "BK215 Hybrid Controller by JPS" suchen
+4. Die Integration über die UI hinzufügen: **Einstellungen** → **Geräte & Dienste** → **Integration hinzufügen** → Nach "BK215 Hybrid Controller" suchen
 
 ---
 
 ## Einrichtung
 
-Der Einrichtungsassistent umfasst vier Schritte:
+Der Einrichtungsassistent umfasst folgende Schritte:
 
 ### Schritt 1 — Allgemeine Einstellungen
 
 | Feld | Beschreibung | Standard |
 |---|---|---|
-| Batteriespeicher-Ladestand-Entity | SOC-Sensor des Batteriespeichers | — |
-| Batterieschrank-Entladetiefe-Entity | Number-Entity für die Batterie-Entladegrenze | — |
-| Hybrid-WR-Entladetiefe-Entity | Sensor oder Number-Entity für die Wechselrichter-Entladegrenze | — |
-| Leistungssensor-Entity | Netzleistungssensor (positiv = Bezug, negativ = Einspeisung) | — |
+| Name | Name des Konfigurationseintrags | BK215 Hybrid Controller by JPS |
+| Entität Speicherlevel Turm 1 | SOC-Sensor des Batteriespeichers Turm 1 | — |
+| Entität BK Entladegrenze Turm 1 | Entität für die Speicher-Entladegrenze Turm 1 | — |
+| Entität HW-Entladegrenze Turm 1 z.B. Kopf HW-Entladegrenze | Sensor HW-Entladegrenze Turm 1 | — |
+| Entität Shelly oder anderer Sensor für die aktuelle Leistung | Netzleistungssensor | — |
 | Regelintervall | Ausführungsintervall des Controllers in Sekunden | 3 s |
-| Totband-Minimum | Untere Netzleistungsschwelle (Einspeiseseite) | −20 W |
-| Totband-Maximum | Obere Netzleistungsschwelle (Bezugsseite) | 20 W |
-| SOC-Puffer | Sicherheitspuffer, der zur Entladegrenze für die SOC-Prüfung addiert wird | 3 % |
-| Limit maximale Wechselrichterleistung | Harte Obergrenze für die Max-Leistungs-Entity | 800 W |
-| Limit minimale Wechselrichterleistung | Harte Untergrenze für die Min-Leistungs-Entity | 600 W |
-| Anlaufverzögerung | Haltezeit nach dem Hochregeln eines Wechselrichters von 0 auf aktive Leistung | 30 s |
+| Deadband-Minimum | Untere Netzleistungsschwelle | −20 W |
+| Deadband-Maximum | Obere Netzleistungsschwelle | 20 W |
+| Pufferwert für Entladegrenze | Sicherheitspuffer, der zur Entladegrenze für die SOC-Prüfung addiert wird | 3 % |
+| Limit für Maximale Wechselrichter-Leistungsgrenze | Feste Obergrenze für den Maximalwert der Max WR-Leistung | 800 W |
+| Limit für Minimale Wechselrichter-Leistungsgrenze | Feste Obergrenze für den Maximalwert der Min WR-Leistung | 600 W |
+| Anlaufverzögerung bei Regelung von 0% auf x% | Haltezeit nach dem Hochregeln eines Wechselrichters von 0 auf aktive Leistung | 30 s |
 
-**Empfohlene Totband-Werte je Konfiguration:**
+**Empfohlene Deadband-Werte je Konfiguration:**
 
-| Konfiguration | Totband-Min | Totband-Max |
+| Konfiguration | Deadband-Min | Deadband-Max |
 |---|---|---|
 | Nur Deye | −20 W | 20 W |
 | 1× APsystems | −50 W | 20 W |
 | 2× APsystems | −100 W | 20 W |
 
-### Schritt 2 — Wechselrichter 1
+### Schritt 2 — Wechselrichter 1 (Turm 1)
 
 | Feld | Beschreibung |
 |---|---|
 | Wechselrichtertyp | `Deye` (Ausgangsbegrenzung 0–100 %) oder `APsystems` (direkte Watt-Steuerung) |
-| Entity für die Leistungssteuerung | Number-Entity zum Einstellen der Ausgangsleistung |
+| Entität zur Leistungssteuerung | Entität zum Einstellen der Ausgangsleistung |
 | Nennleistung | Maximale Wechselrichterleistung in Watt |
-| Ein/Aus-Schalter | Switch-Entity zum Ein- und Ausschalten des Wechselrichters |
-| Aktuelle Wechselrichterleistung | Leistungssensor (nur für APsystems erforderlich) |
+| Ein/Aus-Schalter Wechselrichter | Schalterentität zum Ein- und Ausschalten des Wechselrichters |
+| Entität für aktuelle Leistung Wechselrichter | Leistungssensorentität Wechselrichter (nur für APsystems erforderlich) |
 
-### Schritt 3 — Wechselrichter 2 (optional)
+### Schritt 3 — Wechselrichter 2 (Turm 1 - optional)
 
 Gleiche Felder wie bei Wechselrichter 1. Alle Felder leer lassen, wenn kein zweiter Wechselrichter verwendet wird.
 
-### Schritt 4 — PID-Einstellungen
+### Schritt 4 — Turm 2 (optional)
+
+Alle Felder leer lassen, wenn kein zweiter Turm verwendet wird.
+
+| Feld | Beschreibung |
+|---|---|
+| Entität Speicherlevel Turm 2 (optional) | SOC-Sensor des Batteriespeichers Turm 2 |
+| Entität BK Entladegrenze Turm 2 (optional) | Entität für die Speicher-Entladegrenze Turm 2 |
+| Entität HW-Entladegrenze Turm 2 z.B. Kopf HW-Entladegrenze (optional) | Sensor HW-Entladegrenze Turm 2 |
+
+### Schritt 5 — Wechselrichter 3 (Turm 2) - Wird nur angezeigt, wenn Turm 2 konfiguriert wurde
+
+| Feld | Beschreibung |
+|---|---|
+| Wechselrichtertyp | `Deye` (Ausgangsbegrenzung 0–100 %) oder `APsystems` (direkte Watt-Steuerung) |
+| Entität zur Leistungssteuerung | Entität zum Einstellen der Ausgangsleistung |
+| Nennleistung | Maximale Wechselrichterleistung in Watt |
+| Ein/Aus-Schalter Wechselrichter | Schalterentität zum Ein- und Ausschalten des Wechselrichters |
+| Entität für aktuelle Leistung Wechselrichter | Leistungssensorentität Wechselrichter (nur für APsystems erforderlich) |
+
+### Schritt 6 — Wechselrichter 4 (Turm 2 - optional) - Wird nur angezeigt, wenn Turm 2 konfiguriert wurde
+
+| Feld | Beschreibung |
+|---|---|
+| Wechselrichtertyp | `Deye` (Ausgangsbegrenzung 0–100 %) oder `APsystems` (direkte Watt-Steuerung) |
+| Entität zur Leistungssteuerung | Entität zum Einstellen der Ausgangsleistung |
+| Nennleistung | Maximale Wechselrichterleistung in Watt |
+| Ein/Aus-Schalter Wechselrichter | Schalterentität zum Ein- und Ausschalten des Wechselrichters |
+| Entität für aktuelle Leistung Wechselrichter | Leistungssensorentität Wechselrichter (nur für APsystems erforderlich) |
+
+### Schritt 7 — PID-Einstellungen
 
 Der PID-Regler verwendet einen variablen Proportionalanteil (Kp), der mit der Fehlergröße skaliert. Die Standardwerte funktionieren für die meisten Setups gut.
 
-| Parameter | Standard | Beschreibung |
-|---|---|---|
-| Kp min | 0.4 | Minimaler Proportionalanteil (kleine Fehler) |
-| Kp max | 0.9 | Maximaler Proportionalanteil (große Fehler) |
-| Kp-Fehlerskalierung | 600 | Fehlerwert, bei dem Kp sein Maximum erreicht |
-| Ki | 0.02 | Integralanteil |
-| Kd | 0.12 | Differenzialanteil |
-| Kd-Fehlerskalierung | 300 | Fehlerskalierung zur Reduzierung des Differenzialanteils |
-| Kd-dt-Referenz | 3 | Referenzzeitschritt für die Differenzial-Normalisierung |
-| Kd max | 0.35 | Maximaler Differenzialbeitrag |
+
+| Parameter | Standard (Ein Turm) | Standard (Zwei Türme) | Beschreibung |
+|---|---|---|---|
+| Kp min | 0.4 | 0.4 | Minimaler Proportionalanteil (kleine Fehler) |
+| Kp max | 0.9 | 0.65 | Maximaler Proportionalanteil (große Fehler) |
+| Kp-Fehlerskalierung | 600 | 600 | Fehlerwert, bei dem Kp sein Maximum erreicht |
+| Ki | 0.02 | 0.06 | Integralanteil |
+| Kd | 0.12 | 0.55 | Differenzialanteil |
+| Kd-Fehlerskalierung | 300 | 300 | Fehlerskalierung zur Reduzierung des Differenzialanteils |
+| Kd-dt-Referenz | 3 | 2 | Referenzzeitschritt für die Differenzial-Normalisierung |
+| Kd max | 0.35 | 0.35 | Maximaler Differenzialbeitrag |
 
 ---
 
@@ -349,51 +432,82 @@ Der PID-Regler verwendet einen variablen Proportionalanteil (Kp), der mit der Fe
 |---|---|
 | **Automatik** | Aktiviert oder deaktiviert den Regelkreis. Wird bei Neustart gespeichert. |
 | **Boost** | Setzt alle aktiven Wechselrichter sofort auf Nennleistung. Nur bei eingeschalteter Automatik verfügbar. |
-| **Wechselrichter 1 Helfer** | Interner Ein/Aus-Status des Controllers für Wechselrichter 1. |
-| **Wechselrichter 2 Helfer** | Interner Ein/Aus-Status des Controllers für Wechselrichter 2 (nur bei konfiguriertem zweiten Wechselrichter sichtbar). |
+| **WR 1 manuell** | Schaltet den Wechselrichter 1 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden |
+| **WR 2 manuell** | Schaltet den Wechselrichter 2 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 3 manuell** | Schaltet den Wechselrichter 3 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 4 manuell** | Schaltet den Wechselrichter 4 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 1 Helfer** | Interner Ein/Aus-Status des Controllers für Wechselrichter 1. |
+| **WR 2 Helfer** | Interner Ein/Aus-Status des Controllers für Wechselrichter 2 (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 3 Helfer** | Interner Ein/Aus-Status des Controllers für Wechselrichter 3 (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 4 Helfer** | Interner Ein/Aus-Status des Controllers für Wechselrichter 4 (nur bei konfiguriertem Wechselrichter sichtbar). |
 
 ### Zahlenwerte (Konfigurationskategorie)
 
 | Entity | Einheit | Beschreibung |
 |---|---|---|
-| **Einspeisung-Startschwelle** | % | Mindest-SOC, bevor der Controller die Wechselrichter startet. |
-| **Max. Wechselrichterleistung** | W | Obere Leistungsgrenze für die Wechselrichter. Begrenzt durch das konfigurierte Leistungslimit. |
-| **Min. Wechselrichterleistung** | W | Untere Leistungsgrenze; verhindert den Betrieb unterhalb einer sinnvollen Schwelle. |
-| **Leistungssensor-Offset** | W | Korrekturwert, der zum Netzleistungsmesswert addiert wird. |
-| **Totband-Minimum** | W | Untere Totband-Grenze (Einspeiseseite). |
-| **Totband-Maximum** | W | Obere Totband-Grenze (Bezugsseite). |
+| **Startwert Einspeisung** | % | Mindest-SOC, bevor der Controller die Wechselrichter startet. |
+| **Max WR-Leistung** | W | Obere Leistungsgrenze für die Wechselrichter. Begrenzt durch das konfigurierte Leistungslimit. |
+| **Min WR-Leistung** | W | Untere Leistungsgrenze; verhindert den Betrieb unterhalb einer sinnvollen Schwelle. |
+| **Offset Leistungssensor** | W | Korrekturwert, der zum Netzleistungsmesswert addiert/subtrahiert wird. |
+| **Deadband min** | W | Untere Deadband Grenze (Einspeiseseite). |
+| **Deadband max** | W | Obere Deadband Grenze (Bezugsseite). |
 
 ### Sensoren (Diagnosekategorie)
 
 | Entity | Beschreibung |
 |---|---|
-| **Systemzustand** | Aktueller Schutz-/Betriebszustand (siehe Tabelle unten). |
-| **Totband-Zustand** | Ob der Controller im Modus `Neutral`, `Bezug` oder `Einspeisung` ist. |
+| **Systemstatus** | Aktueller Schutz-/Betriebszustand (siehe Tabelle unten). |
+| **Deadban-Status** | Ob der Controller im Modus `Neutral`, `Bezug` oder `Einspeisung` ist. |
 | **Integralwert** | Aktueller PID-Integralterm (W). |
 | **Letzter Zielwert** | Letzter Leistungs-Sollwert, der an die Wechselrichter gesendet wurde (W). |
 | **Letzter Fehler** | Letzter vom PID verwendeter Fehlerwert (W). |
-| **Gefilterter Fehler** | Totband-korrigierter Fehler, der in den PID eingespeist wird (W). |
+| **Gefilterter Fehler** | Deadband korrigierter Fehler, der in den PID eingespeist wird (W). |
 
 **Systemzustandswerte:**
 
 | Zustand | Bedeutung |
 |---|---|
 | `Inaktiv` | Automatik ist ausgeschaltet. |
-| `Wechselrichter aus` | SOC unter der Startschwelle; Wechselrichter sind aus. |
-| `Wechselrichter ein` | Normalbetrieb; alle konfigurierten Wechselrichter laufen. |
-| `Batterie-Ladestand niedrig` | SOC unter Entladegrenze + Puffer; Wechselrichter wurden abgeschaltet. |
+| `WR aus` | SOC unter der Startschwelle; Wechselrichter sind aus. |
+| `WR an` | Normalbetrieb; alle konfigurierten Wechselrichter laufen. |
+| `Speicherstand niedrig` | SOC beider Türme unter Entladegrenze + Puffer; Wechselrichter wurden abgeschaltet. |
+| `Turm 1 Speicherstand niedrig` | SOC Turm 1 unter Entladegrenze + Puffer; Wechselrichter wurden abgeschaltet. |
+| `Turm 2 Speicherstand niedrig` | SOC Turm 2 unter Entladegrenze + Puffer; Wechselrichter wurden abgeschaltet. |
 | `Fehler` | Beide Wechselrichter sind während des Normalbetriebs unerwartet ausgefallen. |
-| `WR1 ein, WR2 ausgefallen` | WR2 hat sich unerwartet ausgeschaltet; Controller läuft nur mit WR1 weiter. |
-| `WR2 ein, WR1 ausgefallen` | WR1 hat sich unerwartet ausgeschaltet; Controller läuft nur mit WR2 weiter. |
+| `WR 1 an, WR 2 Fehler` | WR 2 hat sich unerwartet ausgeschaltet; Controller läuft nur mit WR 1 weiter. |
+| `WR 2 an, WR 1 Fehler` | WR 1 hat sich unerwartet ausgeschaltet; Controller läuft nur mit WR 2 weiter. |
+| `WR 3 an, WR 4 Fehler` | WR 4 hat sich unerwartet ausgeschaltet; Controller läuft nur mit WR 3 weiter. |
+| `WR 4 an, WR 3 Fehler` | WR 3 hat sich unerwartet ausgeschaltet; Controller läuft nur mit WR 4 weiter. |
+| `WR 1 manuell` | WR 1 auf manuellen Betrieb gestellt. |
+| `WR 1 manuell, WR 2 an` | WR 1 auf manuellen Betrieb gestellt; Controller läuft nur mit WR 2 weiter. |
+| `WR 2 manuell` | WR 2 auf manuellen Betrieb gestellt. |
+| `WR 2 manuell, WR 1 an` | WR 2 auf manuellen Betrieb gestellt; Controller läuft nur mit WR 1 weiter. |
+| `WR 3 manuell` | WR 3 auf manuellen Betrieb gestellt. |
+| `WR 3 manuell, WR 4 an` | WR 3 auf manuellen Betrieb gestellt; Controller läuft nur mit WR4 weiter. |
+| `WR 4 manuell` | WR 4 auf manuellen Betrieb gestellt. |
+| `WR 4 manuell, WR 3 an` | WR 4 auf manuellen Betrieb gestellt; Controller läuft nur mit WR 3 weiter. |
+| `Beide WR Turm 1 manuell` | Beide WR Turm 1 auf manuellen Betrieb gestellt. |
+| `Beide WR Turm 2 manuell` | Beide WR Turm 2 auf manuellen Betrieb gestellt. |
+| `Alle WR manuell` | Alle WR auf manuellen Betrieb gestellt. |
 
 ### Binärsensoren (Diagnosekategorie)
 
 | Entity | Beschreibung |
 |---|---|
-| **Automatik aktiv** | Spiegelt den Automatik-Schalter-Status. |
-| **Boost aktiv** | Spiegelt den Boost-Schalter-Status. |
-| **Wechselrichter 1 aktiv** | Ob der Controller WR1 als eingeschaltet betrachtet. |
-| **Wechselrichter 2 aktiv** | Ob der Controller WR2 als eingeschaltet betrachtet. |
+| **Automatik** | Spiegelt den Automatik-Schalter-Status. |
+| **Boost** | Spiegelt den Boost-Schalter-Status. |
+| **WR 1 Helfer** | Status des Helfers, spiegelt ob der Controller WR1 als eingeschaltet betrachtet. |
+| **WR 1 manuell** | Spiegelt den WR 1 manuell-Schalter-Status |
+| **WR 1 Schalter** | Spiegelt den Status des externen Wechselrichterschalter. |
+| **WR 2 Helfer** | Status des Helfers, spiegelt ob der Controller WR 2 als eingeschaltet betrachtet (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 2 manuell** | Spiegelt den WR 2 manuell-Schalter-Status (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 2 Schalter** | Spiegelt den Status des externen Wechselrichterschalters (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 3 Helfer** | Status des Helfers, spiegelt ob der Controller WR 3 als eingeschaltet betrachtet (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 3 manuell** | Spiegelt den WR 3 manuell-Schalter-Status (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 3 Schalter** | Spiegelt den Status des externen Wechselrichterschalters (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 4 Helfer** | Status des Helfers, spiegelt ob der Controller WR 4 als eingeschaltet betrachtet (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 4 manuell** | Spiegelt den WR 4 manuell-Schalter-Status (nur bei konfiguriertem Wechselrichter sichtbar). |
+| **WR 4 Schalter** | Spiegelt den Status des externen Wechselrichterschalters (nur bei konfiguriertem Wechselrichter sichtbar). |
 
 ---
 
