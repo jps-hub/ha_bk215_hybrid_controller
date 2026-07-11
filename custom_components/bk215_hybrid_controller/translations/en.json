@@ -1,21 +1,23 @@
 {
   "config": {
     "error": {
-      "unknown": "Could not create the controller configuration. Check the Home Assistant log for details."
+      "unknown": "Could not create the controller configuration. Check the Home Assistant log for details.",
+      "tower2_incomplete": "All three Tower 2 entities must be set together, or leave all empty."
     },
     "step": {
       "user": {
         "data": {
-          "avg_battery_soc": "Battery tower level entity",
-          "discharge_limit_a": "Battery cabinet discharge limit entity",
-          "discharge_limit_b": "Hybrid inverter discharge limit entity, for example main hybrid inverter discharge limit",
+          "name": "Name",
+          "avg_battery_soc": "Battery tower 1 level entity",
+          "discharge_limit_a": "Battery cabinet discharge limit entity tower 1",
+          "discharge_limit_b": "Hybrid inverter discharge limit entity tower 1, e.g. main hybrid inverter discharge limit",
           "power_sensor_entity": "Shelly entity or another sensor for the current power",
           "interval_seconds": "Control interval",
           "deadband_min": "Deadband minimum (-20W standard / 1 APsystems -50W / 2 APsystems -100W)",
           "deadband_max": "Deadband maximum (20W standard)",
-          "buffer_soc": "Buffer value for the discharge limit",
-          "max_power_inverter_limit": "Limit for the maximum inverter power limit",
-          "min_power_inverter_limit": "Limit for the minimum inverter power limit",
+          "buffer_soc": "Buffer value for discharge limit",
+          "max_power_inverter_limit": "Limit for maximum inverter power limit",
+          "min_power_inverter_limit": "Limit for minimum inverter power limit",
           "hold_time": "Startup delay when regulating from 0% to x%"
         },
         "title": "General settings"
@@ -28,7 +30,7 @@
           "switch_entity": "On/off inverter switch",
           "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
         },
-        "title": "Inverter 1"
+        "title": "Inverter 1 (Tower 1)"
       },
       "inverter2": {
         "data": {
@@ -39,7 +41,37 @@
           "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
         },
         "description": "Leave all fields empty if you do not use a second inverter.",
-        "title": "Inverter 2"
+        "title": "Inverter 2 (Tower 1 - optional)"
+      },
+      "tower2": {
+        "data": {
+          "avg_battery_soc_2": "Battery tower 2 level entity (optional)",
+          "discharge_limit_a_2": "Battery cabinet discharge limit entity tower 2 (optional)",
+          "discharge_limit_b_2": "Hybrid inverter discharge limit entity tower 2, e.g. main hybrid inverter discharge limit (optional)"
+        },
+        "description": "Leave all fields empty if you do not have a second tower.",
+        "title": "Tower 2 (optional)"
+      },
+      "inverter3": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "title": "Inverter 3 (Tower 2)"
+      },
+      "inverter4": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "description": "Leave all fields empty if you do not use a fourth inverter.",
+        "title": "Inverter 4 (Tower 2 - optional)"
       },
       "pid": {
         "data": {
@@ -60,14 +92,14 @@
     "step": {
       "init": {
         "data": {
-          "avg_battery_soc": "Battery tower level entity",
-          "discharge_limit_a": "Battery cabinet discharge limit entity",
-          "discharge_limit_b": "Hybrid inverter discharge limit entity, for example main hybrid inverter discharge limit",
+          "avg_battery_soc": "Battery tower 1 level entity",
+          "discharge_limit_a": "Battery cabinet discharge limit entity tower 1",
+          "discharge_limit_b": "Hybrid inverter discharge limit entity tower 1, e.g. main hybrid inverter discharge limit",
           "power_sensor_entity": "Shelly entity or another sensor for the current power",
           "interval_seconds": "Control interval",
-          "buffer_soc": "Buffer value for the discharge limit",
-          "max_power_inverter_limit": "Limit for the maximum inverter power limit",
-          "min_power_inverter_limit": "Limit for the minimum inverter power limit",
+          "buffer_soc": "Buffer value for discharge limit",
+          "max_power_inverter_limit": "Limit for maximum inverter power limit",
+          "min_power_inverter_limit": "Limit for minimum inverter power limit",
           "hold_time": "Startup delay when regulating from 0% to x%"
         },
         "title": "General settings"
@@ -80,7 +112,7 @@
           "switch_entity": "On/off inverter switch",
           "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
         },
-        "title": "Inverter 1"
+        "title": "Inverter 1 (Tower 1)"
       },
       "inverter2": {
         "data": {
@@ -91,7 +123,37 @@
           "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
         },
         "description": "Leave all fields empty if you do not use a second inverter.",
-        "title": "Inverter 2"
+        "title": "Inverter 2 (Tower 1 - optional)"
+      },
+      "tower2": {
+        "data": {
+          "avg_battery_soc_2": "Battery tower 2 level entity (optional)",
+          "discharge_limit_a_2": "Battery cabinet discharge limit entity tower 2 (optional)",
+          "discharge_limit_b_2": "Hybrid inverter discharge limit entity tower 2 (optional)"
+        },
+        "description": "Leave all fields empty if you do not have a second tower.",
+        "title": "Tower 2 (optional)"
+      },
+      "inverter3": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "title": "Inverter 3 (Tower 2)"
+      },
+      "inverter4": {
+        "data": {
+          "inverter_type": "Inverter type",
+          "control_entity": "Entity for power control (active power regulation / output limit)",
+          "rated_power": "Rated power",
+          "switch_entity": "On/off inverter switch",
+          "power_sensor_entity": "Entity for current inverter power (required only for APsystems)"
+        },
+        "description": "Leave all fields empty if you do not use a fourth inverter.",
+        "title": "Inverter 4 (Tower 2 - optional)"
       },
       "pid": {
         "data": {
@@ -111,27 +173,57 @@
   "entity": {
     "binary_sensor": {
       "automatic_active": {
-        "name": "Automatic active"
+        "name": "Automatic"
       },
       "boost_active": {
-        "name": "Boost active"
+        "name": "Boost"
       },
-      "inverter1_active": {
-        "name": "Inverter 1 active"
+      "inverter1_helper_active": {
+        "name": "Inverter 1 helper"
       },
-      "inverter2_active": {
-        "name": "Inverter 2 active"
+      "inverter2_helper_active": {
+        "name": "Inverter 2 helper"
+      },
+      "inverter1_switch": {
+        "name": "Inverter 1 switch"
+      },
+      "inverter2_switch": {
+        "name": "Inverter 2 switch"
+      },
+      "inverter1_manual": {
+        "name": "Inverter 1 manual"
+      },
+      "inverter2_manual": {
+        "name": "Inverter 2 manual"
+      },
+      "inverter3_helper_active": {
+        "name": "Inverter 3 helper"
+      },
+      "inverter4_helper_active": {
+        "name": "Inverter 4 helper"
+      },
+      "inverter3_switch": {
+        "name": "Inverter 3 switch"
+      },
+      "inverter4_switch": {
+        "name": "Inverter 4 switch"
+      },
+      "inverter3_manual": {
+        "name": "Inverter 3 manual"
+      },
+      "inverter4_manual": {
+        "name": "Inverter 4 manual"
       }
     },
     "number": {
       "charge_limit_start": {
-        "name": "Feed-in start threshold"
+        "name": "Feed-in start threshold tower 1"
       },
       "max_power_inverter": {
-        "name": "Max power inverter"
+        "name": "Max inverter power"
       },
       "min_power_inverter": {
-        "name": "Min power inverter"
+        "name": "Min inverter power"
       },
       "offset": {
         "name": "Power sensor offset"
@@ -141,6 +233,9 @@
       },
       "deadband_max": {
         "name": "Deadband maximum"
+      },
+      "charge_limit_start_2": {
+        "name": "Feed-in start threshold tower 2"
       }
     },
     "sensor": {
@@ -153,7 +248,22 @@
           "soc_low": "Battery level low",
           "failure": "Failure",
           "inv1_on_inv2_failure": "Inverter 1 on, inverter 2 failure",
-          "inv2_on_inv1_failure": "Inverter 2 on, inverter 1 failure"
+          "inv2_on_inv1_failure": "Inverter 2 on, inverter 1 failure",
+          "inv1_manual": "Inverter 1 manual",
+          "inv1_manual_inv2_on": "Inverter 1 manual, inverter 2 on",
+          "inv2_manual": "Inverter 2 manual",
+          "inv2_manual_inv1_on": "Inverter 2 manual, inverter 1 on",
+          "tower1_soc_low": "Tower 1 battery level low",
+          "tower2_soc_low": "Tower 2 battery level low",
+          "inv3_on_inv4_failure": "Inverter 3 on, inverter 4 failure",
+          "inv4_on_inv3_failure": "Inverter 4 on, inverter 3 failure",
+          "inv3_manual": "Inverter 3 manual",
+          "inv3_manual_inv4_on": "Inverter 3 manual, inverter 4 on",
+          "inv4_manual": "Inverter 4 manual",
+          "inv4_manual_inv3_on": "Inverter 4 manual, inverter 3 on",
+          "both_manual_tower2": "Both inverters tower 2 manual",
+          "both_manual_tower1": "Both inverters tower 1 manual",
+          "both_manual": "All inverters manual"
         }
       },
       "deadband_state": {
@@ -189,6 +299,24 @@
       },
       "inverter2_helper": {
         "name": "Inverter 2 helper"
+      },
+      "inverter1_manual": {
+        "name": "Inverter 1 manual disable"
+      },
+      "inverter2_manual": {
+        "name": "Inverter 2 manual disable"
+      },
+      "inverter3_helper": {
+        "name": "Inverter 3 helper"
+      },
+      "inverter4_helper": {
+        "name": "Inverter 4 helper"
+      },
+      "inverter3_manual": {
+        "name": "Inverter 3 manual disable"
+      },
+      "inverter4_manual": {
+        "name": "Inverter 4 manual disable"
       }
     }
   }
