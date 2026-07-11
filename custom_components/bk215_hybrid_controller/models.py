@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import timedelta
 from typing import Any
 
@@ -93,6 +93,21 @@ class ControllerConfig:
     kd_max: float
     inverter1: InverterConfig
     inverter2: InverterConfig
+    tower2_enabled: bool = False
+    avg_battery_soc_2: str = ""
+    discharge_limit_a_2: str = ""
+    discharge_limit_b_2: str = ""
+    inverter3: InverterConfig = field(
+        default_factory=lambda: InverterConfig.from_dict({})
+    )
+    inverter4: InverterConfig = field(
+        default_factory=lambda: InverterConfig.from_dict({})
+    )
+    charge_limit_start_2: float = 10.0
+    inverter1_manual: bool = False
+    inverter2_manual: bool = False
+    inverter3_manual: bool = False
+    inverter4_manual: bool = False
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> ControllerConfig:
@@ -140,6 +155,19 @@ class ControllerConfig:
             kd_max=float(data["kd_max"]),
             inverter1=InverterConfig.from_dict(data["inverter1"]),
             inverter2=InverterConfig.from_dict(data["inverter2"]),
+            tower2_enabled=bool(data.get("tower2_enabled", False)),
+            avg_battery_soc_2=str(data.get("avg_battery_soc_2", "")),
+            discharge_limit_a_2=str(data.get("discharge_limit_a_2", "")),
+            discharge_limit_b_2=str(data.get("discharge_limit_b_2", "")),
+            inverter3=InverterConfig.from_dict(data.get("inverter3", {})),
+            inverter4=InverterConfig.from_dict(data.get("inverter4", {})),
+            charge_limit_start_2=float(
+                data.get("charge_limit_start_2", DEFAULT_CHARGE_LIMIT_START)
+            ),
+            inverter1_manual=bool(data.get("inverter1_manual", False)),
+            inverter2_manual=bool(data.get("inverter2_manual", False)),
+            inverter3_manual=bool(data.get("inverter3_manual", False)),
+            inverter4_manual=bool(data.get("inverter4_manual", False)),
         )
 
 
@@ -153,6 +181,12 @@ class RuntimeState:
     boost_enabled: bool = False
     inverter1_helper: bool = False
     inverter2_helper: bool = False
+    inverter3_helper: bool = False
+    inverter4_helper: bool = False
+    inverter1_manual: bool = False
+    inverter2_manual: bool = False
+    inverter3_manual: bool = False
+    inverter4_manual: bool = False
     integral: float = 0.0
     last_error: float = 0.0
     last_target: float = 0.0
