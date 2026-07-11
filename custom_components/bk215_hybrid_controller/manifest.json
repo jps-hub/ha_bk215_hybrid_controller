@@ -6,6 +6,7 @@
   "dependencies": [],
   "documentation": "https://github.com/jps-hub/bk215-hybrid-controller",
   "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/jps-hub/ha_bk215_hybrid_controller/issues",
   "requirements": [],
-  "version": "0.1.0b1"
+  "version": "0.2.0b1"
 }
