@@ -18,6 +18,9 @@ from homeassistant.helpers.selector import (
     SelectSelector,
     SelectSelectorConfig,
     SelectSelectorMode,
+    TextSelector,
+    TextSelectorConfig,
+    TextSelectorType,
 )
 
 from .const import (
@@ -28,12 +31,16 @@ from .const import (
     DEFAULT_HOLD_TIME,
     DEFAULT_INTERVAL_SECONDS,
     DEFAULT_KD,
+    DEFAULT_KD_2T,
     DEFAULT_KD_DT_REF,
+    DEFAULT_KD_DT_REF_2T,
     DEFAULT_KD_ERROR_SCALE,
     DEFAULT_KD_MAX,
     DEFAULT_KI,
+    DEFAULT_KI_2T,
     DEFAULT_KP_ERROR_SCALE,
     DEFAULT_KP_MAX,
+    DEFAULT_KP_MAX_2T,
     DEFAULT_KP_MIN,
     DEFAULT_MAX_POWER_INVERTER,
     DEFAULT_MAX_POWER_INVERTER_LIMIT,
@@ -119,6 +126,9 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         schema = vol.Schema(
             {
+                vol.Optional("name", default=DEFAULT_NAME): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
                 vol.Required("avg_battery_soc"): _entity("sensor"),
                 vol.Required("discharge_limit_a"): _entity("number"),
                 vol.Required("discharge_limit_b"): _entity("sensor"),
@@ -207,7 +217,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 "rated_power": 0,
                 **user_input,
             }
-            return await self.async_step_pid()
+            return await self.async_step_tower2()
 
         schema = vol.Schema(
             {
@@ -223,6 +233,92 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
         return self.async_show_form(step_id="inverter2", data_schema=schema)
+
+    async def async_step_tower2(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect optional second tower settings."""
+        schema = vol.Schema(
+            {
+                vol.Optional("avg_battery_soc_2"): _entity("sensor"),
+                vol.Optional("discharge_limit_a_2"): _entity("number"),
+                vol.Optional("discharge_limit_b_2"): _entity("sensor"),
+            }
+        )
+
+        if user_input is not None:
+            filled = [
+                k
+                for k in (
+                    "avg_battery_soc_2",
+                    "discharge_limit_a_2",
+                    "discharge_limit_b_2",
+                )
+                if user_input.get(k)
+            ]
+            if len(filled) == 0:
+                return await self.async_step_pid()
+            if len(filled) == 3:
+                self._data.update(user_input)
+                self._data["tower2_enabled"] = True
+                return await self.async_step_inverter3()
+            return self.async_show_form(
+                step_id="tower2",
+                data_schema=schema,
+                errors={"base": "tower2_incomplete"},
+            )
+
+        return self.async_show_form(step_id="tower2", data_schema=schema)
+
+    async def async_step_inverter3(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect inverter 3 settings (mandatory for tower 2)."""
+        if user_input is not None:
+            self._data["inverter3"] = user_input
+            return await self.async_step_inverter4()
+
+        schema = vol.Schema(
+            {
+                vol.Required("inverter_type", default="Deye"): INVERTER_TYPE_SELECTOR,
+                vol.Required("control_entity"): _entity("number"),
+                vol.Required("rated_power"): NumberSelector(
+                    NumberSelectorConfig(
+                        min=300, max=2500, step=100, unit_of_measurement="W"
+                    )
+                ),
+                vol.Required("switch_entity"): _entity("switch"),
+                vol.Optional("power_sensor_entity"): _entity("sensor"),
+            }
+        )
+        return self.async_show_form(step_id="inverter3", data_schema=schema)
+
+    async def async_step_inverter4(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect optional inverter 4 settings."""
+        if user_input is not None:
+            self._data["inverter4"] = {
+                "inverter_type": "Deye",
+                "rated_power": 0,
+                **user_input,
+            }
+            return await self.async_step_pid()
+
+        schema = vol.Schema(
+            {
+                vol.Optional("inverter_type", default="Deye"): INVERTER_TYPE_SELECTOR,
+                vol.Optional("control_entity"): _entity("number"),
+                vol.Optional("rated_power", default=0): NumberSelector(
+                    NumberSelectorConfig(
+                        min=0, max=2500, step=100, unit_of_measurement="W"
+                    )
+                ),
+                vol.Optional("switch_entity"): _entity("switch"),
+                vol.Optional("power_sensor_entity"): _entity("sensor"),
+            }
+        )
+        return self.async_show_form(step_id="inverter4", data_schema=schema)
 
     async def async_step_pid(
         self, user_input: dict[str, Any] | None = None
@@ -271,11 +367,21 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     "inverter2": InverterConfig.from_dict(
                         self._data.get("inverter2", {})
                     ).as_dict(),
+                    "tower2_enabled": bool(self._data.get("tower2_enabled", False)),
+                    "avg_battery_soc_2": self._data.get("avg_battery_soc_2", ""),
+                    "discharge_limit_a_2": self._data.get("discharge_limit_a_2", ""),
+                    "discharge_limit_b_2": self._data.get("discharge_limit_b_2", ""),
+                    "inverter3": InverterConfig.from_dict(
+                        self._data.get("inverter3", {})
+                    ).as_dict(),
+                    "inverter4": InverterConfig.from_dict(
+                        self._data.get("inverter4", {})
+                    ).as_dict(),
                 }
 
-                await self.async_set_unique_id(DEFAULT_NAME)
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(title=DEFAULT_NAME, data=data)
+                return self.async_create_entry(
+                    title=self._data.get("name", DEFAULT_NAME), data=data
+                )
             except (KeyError, TypeError, ValueError):
                 _LOGGER.exception("Failed to create config entry from config flow data")
                 return self.async_show_form(
@@ -332,24 +438,36 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional("kp_min", default=DEFAULT_KP_MIN): NumberSelector(
                     NumberSelectorConfig(min=0.01, max=2.0, step=0.01)
                 ),
-                vol.Optional("kp_max", default=DEFAULT_KP_MAX): NumberSelector(
-                    NumberSelectorConfig(min=0.05, max=3.0, step=0.01)
-                ),
+                vol.Optional(
+                    "kp_max",
+                    default=DEFAULT_KP_MAX_2T
+                    if self._data.get("tower2_enabled")
+                    else DEFAULT_KP_MAX,
+                ): NumberSelector(NumberSelectorConfig(min=0.05, max=3.0, step=0.01)),
                 vol.Optional(
                     "kp_error_scale", default=DEFAULT_KP_ERROR_SCALE
                 ): NumberSelector(NumberSelectorConfig(min=50, max=3000, step=10)),
-                vol.Optional("ki", default=DEFAULT_KI): NumberSelector(
-                    NumberSelectorConfig(min=0.001, max=1.0, step=0.001)
-                ),
-                vol.Optional("kd", default=DEFAULT_KD): NumberSelector(
-                    NumberSelectorConfig(min=0.0, max=2.0, step=0.01)
-                ),
+                vol.Optional(
+                    "ki",
+                    default=DEFAULT_KI_2T
+                    if self._data.get("tower2_enabled")
+                    else DEFAULT_KI,
+                ): NumberSelector(NumberSelectorConfig(min=0.001, max=1.0, step=0.001)),
+                vol.Optional(
+                    "kd",
+                    default=DEFAULT_KD_2T
+                    if self._data.get("tower2_enabled")
+                    else DEFAULT_KD,
+                ): NumberSelector(NumberSelectorConfig(min=0.0, max=2.0, step=0.01)),
                 vol.Optional(
                     "kd_error_scale", default=DEFAULT_KD_ERROR_SCALE
                 ): NumberSelector(NumberSelectorConfig(min=0, max=3000, step=10)),
-                vol.Optional("kd_dt_ref", default=DEFAULT_KD_DT_REF): NumberSelector(
-                    NumberSelectorConfig(min=0.1, max=10.0, step=0.1)
-                ),
+                vol.Optional(
+                    "kd_dt_ref",
+                    default=DEFAULT_KD_DT_REF_2T
+                    if self._data.get("tower2_enabled")
+                    else DEFAULT_KD_DT_REF,
+                ): NumberSelector(NumberSelectorConfig(min=0.1, max=10.0, step=0.1)),
                 vol.Optional("kd_max", default=DEFAULT_KD_MAX): NumberSelector(
                     NumberSelectorConfig(min=0.0, max=100.0, step=0.01)
                 ),
@@ -526,7 +644,7 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 "rated_power": 0,
                 **user_input,
             }
-            return await self.async_step_pid()
+            return await self.async_step_tower2()
 
         inverter2 = InverterConfig.from_dict(
             self._config.get("inverter2", {})
@@ -549,6 +667,121 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
         )
         return self.async_show_form(step_id="inverter2", data_schema=schema)
 
+    async def async_step_tower2(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage second tower options."""
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Optional("avg_battery_soc_2"): _entity("sensor"),
+                    vol.Optional("discharge_limit_a_2"): _entity("number"),
+                    vol.Optional("discharge_limit_b_2"): _entity("sensor"),
+                }
+            ),
+            {
+                k: v
+                for k, v in {
+                    "avg_battery_soc_2": self._config.get("avg_battery_soc_2") or None,
+                    "discharge_limit_a_2": self._config.get("discharge_limit_a_2")
+                    or None,
+                    "discharge_limit_b_2": self._config.get("discharge_limit_b_2")
+                    or None,
+                }.items()
+                if v is not None
+            },
+        )
+
+        if user_input is not None:
+            filled = [
+                k
+                for k in (
+                    "avg_battery_soc_2",
+                    "discharge_limit_a_2",
+                    "discharge_limit_b_2",
+                )
+                if user_input.get(k)
+            ]
+            if len(filled) == 0:
+                self._options["tower2_enabled"] = False
+                self._options["avg_battery_soc_2"] = ""
+                self._options["discharge_limit_a_2"] = ""
+                self._options["discharge_limit_b_2"] = ""
+                return await self.async_step_pid()
+            if len(filled) == 3:
+                self._options.update(user_input)
+                self._options["tower2_enabled"] = True
+                return await self.async_step_inverter3()
+            return self.async_show_form(
+                step_id="tower2",
+                data_schema=schema,
+                errors={"base": "tower2_incomplete"},
+            )
+
+        return self.async_show_form(step_id="tower2", data_schema=schema)
+
+    async def async_step_inverter3(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage inverter 3 options (mandatory for tower 2)."""
+        if user_input is not None:
+            self._options["inverter3"] = user_input
+            return await self.async_step_inverter4()
+
+        inverter3 = InverterConfig.from_dict(
+            self._config.get("inverter3", {})
+        ).as_dict()
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required("inverter_type"): INVERTER_TYPE_SELECTOR,
+                    vol.Required("control_entity"): _entity("number"),
+                    vol.Required("rated_power"): NumberSelector(
+                        NumberSelectorConfig(
+                            min=300, max=2500, step=100, unit_of_measurement="W"
+                        )
+                    ),
+                    vol.Required("switch_entity"): _entity("switch"),
+                    vol.Optional("power_sensor_entity"): _entity("sensor"),
+                }
+            ),
+            {key: value for key, value in inverter3.items() if value is not None},
+        )
+        return self.async_show_form(step_id="inverter3", data_schema=schema)
+
+    async def async_step_inverter4(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage optional inverter 4 options."""
+        if user_input is not None:
+            self._options["inverter4"] = {
+                "inverter_type": "Deye",
+                "rated_power": 0,
+                **user_input,
+            }
+            return await self.async_step_pid()
+
+        inverter4 = InverterConfig.from_dict(
+            self._config.get("inverter4", {})
+        ).as_dict()
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Optional("inverter_type"): INVERTER_TYPE_SELECTOR,
+                    vol.Optional("control_entity"): _entity("number"),
+                    vol.Optional("rated_power"): NumberSelector(
+                        NumberSelectorConfig(
+                            min=0, max=2500, step=100, unit_of_measurement="W"
+                        )
+                    ),
+                    vol.Optional("switch_entity"): _entity("switch"),
+                    vol.Optional("power_sensor_entity"): _entity("sensor"),
+                }
+            ),
+            {key: value for key, value in inverter4.items() if value is not None},
+        )
+        return self.async_show_form(step_id="inverter4", data_schema=schema)
+
     async def async_step_pid(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
@@ -557,6 +790,7 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
             self._options.update(user_input)
             return self.async_create_entry(title="", data=self._options)
 
+        tower2 = bool(self._config.get("tower2_enabled", False))
         schema = vol.Schema(
             {
                 vol.Optional(
@@ -565,7 +799,11 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 ): NumberSelector(NumberSelectorConfig(min=0.01, max=2.0, step=0.01)),
                 vol.Optional(
                     "kp_max",
-                    default=float(self._config.get("kp_max", DEFAULT_KP_MAX)),
+                    default=float(
+                        self._config.get(
+                            "kp_max", DEFAULT_KP_MAX_2T if tower2 else DEFAULT_KP_MAX
+                        )
+                    ),
                 ): NumberSelector(NumberSelectorConfig(min=0.05, max=3.0, step=0.01)),
                 vol.Optional(
                     "kp_error_scale",
@@ -575,11 +813,15 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 ): NumberSelector(NumberSelectorConfig(min=50, max=3000, step=10)),
                 vol.Optional(
                     "ki",
-                    default=float(self._config.get("ki", DEFAULT_KI)),
+                    default=float(
+                        self._config.get("ki", DEFAULT_KI_2T if tower2 else DEFAULT_KI)
+                    ),
                 ): NumberSelector(NumberSelectorConfig(min=0.001, max=1.0, step=0.001)),
                 vol.Optional(
                     "kd",
-                    default=float(self._config.get("kd", DEFAULT_KD)),
+                    default=float(
+                        self._config.get("kd", DEFAULT_KD_2T if tower2 else DEFAULT_KD)
+                    ),
                 ): NumberSelector(NumberSelectorConfig(min=0.0, max=2.0, step=0.01)),
                 vol.Optional(
                     "kd_error_scale",
@@ -589,7 +831,12 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 ): NumberSelector(NumberSelectorConfig(min=0, max=3000, step=10)),
                 vol.Optional(
                     "kd_dt_ref",
-                    default=float(self._config.get("kd_dt_ref", DEFAULT_KD_DT_REF)),
+                    default=float(
+                        self._config.get(
+                            "kd_dt_ref",
+                            DEFAULT_KD_DT_REF_2T if tower2 else DEFAULT_KD_DT_REF,
+                        )
+                    ),
                 ): NumberSelector(NumberSelectorConfig(min=0.1, max=10.0, step=0.1)),
                 vol.Optional(
                     "kd_max",
