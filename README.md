@@ -174,6 +174,12 @@ The PID controller uses a variable proportional gain (Kp) that scales with the e
 | **Last target value** | Last power setpoint sent to the inverters (W). |
 | **Last error** | Last error value used by the PID (W). |
 | **Filtered error** | Deadband-adjusted error fed into the PID (W). |
+| **Last measured grid power** | Raw power sensor reading used in the last control cycle (W). Disabled by default. |
+| **Possible system power** | Sum of rated power of all configured, non-manual inverters (W). Disabled by default. |
+| **Inverter 1 output value** | Last written output value of inverter 1 (`%` for Deye, `W` for APsystems). Disabled by default. |
+| **Inverter 2 output value** | Same for inverter 2 (only shown if configured). Disabled by default. |
+| **Inverter 3 output value** | Same for inverter 3 (only shown if configured). Disabled by default. |
+| **Inverter 4 output value** | Same for inverter 4 (only shown if configured). Disabled by default. |
 
 **System state values:**
 
@@ -457,11 +463,17 @@ Der PID-Regler verwendet einen variablen Proportionalanteil (Kp), der mit der Fe
 | Entity | Beschreibung |
 |---|---|
 | **Systemstatus** | Aktueller Schutz-/Betriebszustand (siehe Tabelle unten). |
-| **Deadban-Status** | Ob der Controller im Modus `Neutral`, `Bezug` oder `Einspeisung` ist. |
+| **Deadband-Status** | Ob der Controller im Modus `Neutral`, `Bezug` oder `Einspeisung` ist. |
 | **Integralwert** | Aktueller PID-Integralterm (W). |
 | **Letzter Zielwert** | Letzter Leistungs-Sollwert, der an die Wechselrichter gesendet wurde (W). |
 | **Letzter Fehler** | Letzter vom PID verwendeter Fehlerwert (W). |
 | **Gefilterter Fehler** | Deadband korrigierter Fehler, der in den PID eingespeist wird (W). |
+| **Letzter Netzleistungswert** | Rohwert des Netzleistungssensors aus dem letzten Regelzyklus (W). Standardmäßig deaktiviert. |
+| **Mögliche Systemleistung** | Summe der Nennleistung aller konfigurierten, nicht manuell deaktivierten Wechselrichter (W). Standardmäßig deaktiviert. |
+| **WR 1 Ausgabewert** | Letzter Ausgabewert des Wechselrichters 1 (`%` bei Deye, `W` bei APsystems). Standardmäßig deaktiviert. |
+| **WR 2 Ausgabewert** | Gleiches für Wechselrichter 2 (nur bei konfiguriertem WR sichtbar). Standardmäßig deaktiviert. |
+| **WR 3 Ausgabewert** | Gleiches für Wechselrichter 3 (nur bei konfiguriertem WR sichtbar). Standardmäßig deaktiviert. |
+| **WR 4 Ausgabewert** | Gleiches für Wechselrichter 4 (nur bei konfiguriertem WR sichtbar). Standardmäßig deaktiviert. |
 
 **Systemzustandswerte:**
 
