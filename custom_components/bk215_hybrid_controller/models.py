@@ -190,6 +190,7 @@ class RuntimeState:
     integral: float = 0.0
     last_error: float = 0.0
     last_target: float = 0.0
+    last_grid_power: float = 0.0
     deadband_filtered_error: float = 0.0
     hold_until: float = 0.0
     last_run_monotonic: float = 0.0
