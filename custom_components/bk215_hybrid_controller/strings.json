@@ -285,6 +285,24 @@
       },
       "filtered_error_store": {
         "name": "Filtered error"
+      },
+      "inverter1_output": {
+        "name": "Inverter 1 output value"
+      },
+      "inverter2_output": {
+        "name": "Inverter 2 output value"
+      },
+      "inverter3_output": {
+        "name": "Inverter 3 output value"
+      },
+      "inverter4_output": {
+        "name": "Inverter 4 output value"
+      },
+      "possible_system_power": {
+        "name": "Possible system power"
+      },
+      "last_grid_power": {
+        "name": "Last measured grid power"
       }
     },
     "switch": {
