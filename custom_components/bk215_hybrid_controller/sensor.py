@@ -12,7 +12,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import EntityCategory, UnitOfPower
+from homeassistant.const import PERCENTAGE, EntityCategory, UnitOfPower
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
@@ -21,6 +21,15 @@ from .const import DOMAIN
 from .controller import BK215HybridController
 
 PARALLEL_UPDATES = 0
+
+
+def _output_value_fn(attr: str) -> Callable[[BK215HybridController], float]:
+    """Return a value function that reads a named float property from the controller."""
+
+    def _fn(ctrl: BK215HybridController) -> float:
+        return float(getattr(ctrl, attr))
+
+    return _fn
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -108,6 +117,26 @@ SENSOR_DESCRIPTIONS: tuple[BK215HybridControllerSensorEntityDescription, ...] = 
         entity_category=EntityCategory.DIAGNOSTIC,
         value_fn=lambda controller: controller.state.deadband_filtered_error,
     ),
+    BK215HybridControllerSensorEntityDescription(
+        key="last_grid_power",
+        name=None,
+        translation_key="last_grid_power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=1,
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.state.last_grid_power,
+    ),
+    BK215HybridControllerSensorEntityDescription(
+        key="possible_system_power",
+        name=None,
+        translation_key="possible_system_power",
+        native_unit_of_measurement=UnitOfPower.WATT,
+        suggested_display_precision=0,
+        entity_registry_enabled_default=False,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.possible_system_power,
+    ),
 )
 
 
@@ -118,10 +147,39 @@ async def async_setup_entry(
 ) -> None:
     """Set up controller sensors from a config entry."""
     controller: BK215HybridController = entry.runtime_data
-    async_add_entities(
+    entities: list[BK215HybridControllerSensor] = [
         BK215HybridControllerSensor(controller, entry, description)
         for description in SENSOR_DESCRIPTIONS
-    )
+    ]
+
+    # Output value sensors — one per configured inverter, unit depends on inverter type
+    for inv_num, inv_config, attr in (
+        (1, controller.config.inverter1, "inverter1_last_output"),
+        (2, controller.config.inverter2, "inverter2_last_output"),
+        (3, controller.config.inverter3, "inverter3_last_output"),
+        (4, controller.config.inverter4, "inverter4_last_output"),
+    ):
+        if inv_config.exists:
+            unit = PERCENTAGE if inv_config.is_deye else UnitOfPower.WATT
+            precision = 1 if inv_config.is_deye else 0
+            entities.append(
+                BK215HybridControllerSensor(
+                    controller,
+                    entry,
+                    BK215HybridControllerSensorEntityDescription(
+                        key=f"inverter{inv_num}_output",
+                        name=None,
+                        translation_key=f"inverter{inv_num}_output",
+                        native_unit_of_measurement=unit,
+                        suggested_display_precision=precision,
+                        entity_registry_enabled_default=False,
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                        value_fn=_output_value_fn(attr),
+                    ),
+                )
+            )
+
+    async_add_entities(entities)
 
 
 class BK215HybridControllerSensor(SensorEntity):
