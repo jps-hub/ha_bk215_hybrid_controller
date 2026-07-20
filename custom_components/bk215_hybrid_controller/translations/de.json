@@ -285,6 +285,24 @@
       },
       "filtered_error_store": {
         "name": "Gefilterter Fehler"
+      },
+      "inverter1_output": {
+        "name": "WR 1 Ausgabewert"
+      },
+      "inverter2_output": {
+        "name": "WR 2 Ausgabewert"
+      },
+      "inverter3_output": {
+        "name": "WR 3 Ausgabewert"
+      },
+      "inverter4_output": {
+        "name": "WR 4 Ausgabewert"
+      },
+      "possible_system_power": {
+        "name": "Mögliche Systemleistung"
+      },
+      "last_grid_power": {
+        "name": "Letzter Netzleistungswert"
       }
     },
     "switch": {
