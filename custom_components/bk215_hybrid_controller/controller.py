@@ -160,6 +160,52 @@ class BK215HybridController:
         return self._is_on(self.config.inverter1.switch_entity)
 
     @property
+    def possible_system_power(self) -> float:
+        """Return the sum of rated power of all configured, non-manual inverters."""
+        return (
+            (
+                self.config.inverter1.rated_power
+                if not self.state.inverter1_manual
+                else 0.0
+            )
+            + (
+                self.config.inverter2.rated_power
+                if self.config.inverter2.exists and not self.state.inverter2_manual
+                else 0.0
+            )
+            + (
+                self.config.inverter3.rated_power
+                if self.config.inverter3.exists and not self.state.inverter3_manual
+                else 0.0
+            )
+            + (
+                self.config.inverter4.rated_power
+                if self.config.inverter4.exists and not self.state.inverter4_manual
+                else 0.0
+            )
+        )
+
+    @property
+    def inverter1_last_output(self) -> float:
+        """Return the last written output value of inverter 1 control entity."""
+        return self._get_float(self.config.inverter1.control_entity)
+
+    @property
+    def inverter2_last_output(self) -> float:
+        """Return the last written output value of inverter 2 control entity."""
+        return self._get_float(self.config.inverter2.control_entity)
+
+    @property
+    def inverter3_last_output(self) -> float:
+        """Return the last written output value of inverter 3 control entity."""
+        return self._get_float(self.config.inverter3.control_entity)
+
+    @property
+    def inverter4_last_output(self) -> float:
+        """Return the last written output value of inverter 4 control entity."""
+        return self._get_float(self.config.inverter4.control_entity)
+
+    @property
     def inverter2_switch_on(self) -> bool:
         """Return the actual on/off state of the inverter 2 switch entity."""
         return self.config.inverter2.exists and self._is_on(
@@ -861,6 +907,7 @@ class BK215HybridController:
     def _update_deadband_state(self) -> None:
         """Update deadband state and filtered error."""
         grid_sensor_p = self._get_float(self.config.power_sensor_entity)
+        self.state.last_grid_power = round(grid_sensor_p, 1)
         offset = self.config.offset
         grid_p = grid_sensor_p - offset
 
