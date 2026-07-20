@@ -161,7 +161,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 ): NumberSelector(
                     NumberSelectorConfig(
                         min=100,
-                        max=4000,
+                        max=5000,
                         step=10,
                         unit_of_measurement="W",
                     )
@@ -576,7 +576,7 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 ): NumberSelector(
                     NumberSelectorConfig(
                         min=100,
-                        max=4000,
+                        max=5000,
                         step=10,
                         unit_of_measurement="W",
                     )
