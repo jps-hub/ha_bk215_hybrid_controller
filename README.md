@@ -69,6 +69,8 @@ The setup wizard has the following steps:
 | Battery tower 1 level entity | SOC sensor of battery tower 1 | — |
 | Battery cabinet discharge limit entity tower 1 | Entity for the storage discharge limit of tower 1 | — |
 | Hybrid inverter discharge limit entity tower 1 | Sensor for the inverter discharge limit of tower 1, e.g. main hybrid inverter discharge limit | — |
+| Tower 1 input power | Optional sensor for the current input power of tower 1 | — |
+| EV3600 tower 1 | Select `yes` to configure EV3600 charging entities | no |
 | Power sensor entity | Grid power sensor (positive = import, negative = export) | — |
 | Control interval | Execution interval of the controller in seconds | 3 s |
 | Deadband minimum | Lower grid power threshold (export side) | −20 W |
@@ -77,6 +79,10 @@ The setup wizard has the following steps:
 | Limit for maximum inverter power limit | Hard ceiling for the max power number entity | 800 W |
 | Limit for minimum inverter power limit | Hard ceiling for the max value of min inverter power | 600 W |
 | Startup delay when regulating from 0% to x% | Hold time after ramping an inverter from 0 to active power | 30 s |
+| Bypass hysteresis | SOC drop below the start threshold required to release bypass | 5 % |
+
+When EV3600 tower 1 is enabled, the wizard also asks for its auto-charge mode
+switch and vehicle charging power sensor.
 
 **Recommended deadband values by configuration:**
 
@@ -109,6 +115,11 @@ Leave all fields empty if no second tower is used. Either all three fields must 
 | Battery tower 2 level entity | SOC sensor of battery tower 2 |
 | Battery cabinet discharge limit entity tower 2 | Entity for the storage discharge limit of tower 2 |
 | Hybrid inverter discharge limit entity tower 2 | Sensor for the inverter discharge limit of tower 2 |
+| Tower 2 input power | Optional sensor for the current input power of tower 2 |
+| EV3600 tower 2 | Select `yes` to configure EV3600 charging entities |
+
+When EV3600 tower 2 is enabled, the wizard also asks for its auto-charge mode
+switch and vehicle charging power sensor.
 
 ### Step 5 — Inverter 3 (Tower 2) — only shown if tower 2 is configured
 
@@ -143,6 +154,7 @@ The PID controller uses a variable proportional gain (Kp) that scales with the e
 |---|---|
 | **Automatic** | Enables or disables the control loop. Persisted across restarts. |
 | **Boost** | Sets all active inverters to their rated power immediately. Only available when Automatic is on. |
+| **Bypass tower 1/2** | Overrides normal regulation for the selected tower when its SOC reaches the configured start threshold. |
 | **Inverter 1 manual disable** | Puts inverter 1 into manual mode. The inverter is switched off and can then be controlled outside the integration. |
 | **Inverter 2 manual disable** | Puts inverter 2 into manual mode. Same behaviour (only shown if configured). |
 | **Inverter 3 manual disable** | Puts inverter 3 into manual mode. Same behaviour (only shown if configured). |
@@ -163,12 +175,13 @@ The PID controller uses a variable proportional gain (Kp) that scales with the e
 | **Power sensor offset** | W | Correction value added to/subtracted from the grid power reading. |
 | **Deadband minimum** | W | Lower deadband boundary (export side). |
 | **Deadband maximum** | W | Upper deadband boundary (import side). |
+| **Start bypass tower 1/2** | % | SOC threshold for that tower's bypass, with 5% hysteresis when releasing it. |
 
 ### Sensors (diagnostic category)
 
 | Entity | Description |
 |---|---|
-| **System state** | Current protection/operation state (see table below). |
+| **System state tower 1/2** | Current state for each tower, including `bypass` and `Autolade-Modus`. |
 | **Deadband state** | Whether the controller is in `neutral`, `import`, or `export` mode. |
 | **Integral value** | Current PID integral term (W). |
 | **Last target value** | Last power setpoint sent to the inverters (W). |
@@ -207,6 +220,8 @@ The PID controller uses a variable proportional gain (Kp) that scales with the e
 | `Both inverters tower 1 manual` | Both tower 1 inverters in manual mode. |
 | `Both inverters tower 2 manual` | Both tower 2 inverters in manual mode. |
 | `All inverters manual` | All inverters in manual mode. |
+| `Bypass` | Tower bypass is active and overrides normal PID/boost output. |
+| `Autolade-Modus` | EV3600 auto-charge switch is on and vehicle charging power is above zero; that tower's inverters are shut down. |
 
 ### Binary sensors (diagnostic category)
 
@@ -242,6 +257,7 @@ Every <interval> seconds (and on relevant state changes):
    - avg_soc_2 <= discharge_limit_2 + buffer  →  tower2_soc_low  →  shut down WR3+WR4
    - Both towers low                           →  soc_low         →  shut down all
    - Inverter unexpectedly off                 →  failure state
+   - EV3600 auto-charge active with power > 0  →  shut down only that tower
 3. If system state is soc_low / inv_off / failure / both_manual:
    - Set all inverter outputs to 0, turn off switches
 4. If Boost mode:
@@ -251,6 +267,7 @@ Every <interval> seconds (and on relevant state changes):
    - PID step: calculate target power from grid error
    - Split target proportionally between all active inverters by rated power
    - Apply hysteresis before writing to inverter control entities
+6. Apply tower-specific bypass after PID/boost; SOC, global protection, and EV3600 shutdowns take priority.
 ```
 
 ---
@@ -351,6 +368,8 @@ Der Einrichtungsassistent umfasst folgende Schritte:
 | Entität Speicherlevel Turm 1 | SOC-Sensor des Batteriespeichers Turm 1 | — |
 | Entität BK Entladegrenze Turm 1 | Entität für die Speicher-Entladegrenze Turm 1 | — |
 | Entität HW-Entladegrenze Turm 1 z.B. Kopf HW-Entladegrenze | Sensor HW-Entladegrenze Turm 1 | — |
+| Eingangsleistung Turm 1 | Optionaler Sensor für die aktuelle Eingangsleistung von Turm 1 | — |
+| EV3600 Turm 1 | `Ja` wählen, um EV3600-Entities zu konfigurieren | Nein |
 | Entität Shelly oder anderer Sensor für die aktuelle Leistung | Netzleistungssensor | — |
 | Regelintervall | Ausführungsintervall des Controllers in Sekunden | 3 s |
 | Deadband-Minimum | Untere Netzleistungsschwelle | −20 W |
@@ -359,6 +378,10 @@ Der Einrichtungsassistent umfasst folgende Schritte:
 | Limit für Maximale Wechselrichter-Leistungsgrenze | Feste Obergrenze für den Maximalwert der Max WR-Leistung | 800 W |
 | Limit für Minimale Wechselrichter-Leistungsgrenze | Feste Obergrenze für den Maximalwert der Min WR-Leistung | 600 W |
 | Anlaufverzögerung bei Regelung von 0% auf x% | Haltezeit nach dem Hochregeln eines Wechselrichters von 0 auf aktive Leistung | 30 s |
+| Bypass-Hysterese | SOC-Abfall unter die Startschwelle, ab dem der Bypass beendet wird | 5 % |
+
+Bei aktiviertem EV3600 werden zusätzlich der Autolade-Modus-Schalter und der
+Fahrzeugladeleistungssensor abgefragt.
 
 **Empfohlene Deadband-Werte je Konfiguration:**
 
@@ -391,6 +414,11 @@ Alle Felder leer lassen, wenn kein zweiter Turm verwendet wird.
 | Entität Speicherlevel Turm 2 (optional) | SOC-Sensor des Batteriespeichers Turm 2 |
 | Entität BK Entladegrenze Turm 2 (optional) | Entität für die Speicher-Entladegrenze Turm 2 |
 | Entität HW-Entladegrenze Turm 2 z.B. Kopf HW-Entladegrenze (optional) | Sensor HW-Entladegrenze Turm 2 |
+| Eingangsleistung Turm 2 | Optionaler Sensor für die aktuelle Eingangsleistung von Turm 2 |
+| EV3600 Turm 2 | `Ja` wählen, um EV3600-Entities zu konfigurieren |
+
+Bei aktiviertem EV3600 werden zusätzlich der Autolade-Modus-Schalter und der
+Fahrzeugladeleistungssensor abgefragt.
 
 ### Schritt 5 — Wechselrichter 3 (Turm 2) - Wird nur angezeigt, wenn Turm 2 konfiguriert wurde
 
@@ -438,6 +466,7 @@ Der PID-Regler verwendet einen variablen Proportionalanteil (Kp), der mit der Fe
 |---|---|
 | **Automatik** | Aktiviert oder deaktiviert den Regelkreis. Wird bei Neustart gespeichert. |
 | **Boost** | Setzt alle aktiven Wechselrichter sofort auf Nennleistung. Nur bei eingeschalteter Automatik verfügbar. |
+| **Bypass Turm 1/2** | Übersteuert die normale Leistungsregelung des jeweiligen Turms ab der eingestellten SOC-Schwelle. |
 | **WR 1 manuell** | Schaltet den Wechselrichter 1 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden |
 | **WR 2 manuell** | Schaltet den Wechselrichter 2 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden (nur bei konfiguriertem Wechselrichter sichtbar). |
 | **WR 3 manuell** | Schaltet den Wechselrichter 3 auf manuellen Betrieb. Wechselrichter wird abgeschaltet und kann anschließend außerhalb der Integration gesteuert werden (nur bei konfiguriertem Wechselrichter sichtbar). |
@@ -457,12 +486,13 @@ Der PID-Regler verwendet einen variablen Proportionalanteil (Kp), der mit der Fe
 | **Offset Leistungssensor** | W | Korrekturwert, der zum Netzleistungsmesswert addiert/subtrahiert wird. |
 | **Deadband min** | W | Untere Deadband Grenze (Einspeiseseite). |
 | **Deadband max** | W | Obere Deadband Grenze (Bezugsseite). |
+| **Start Bypass Turm 1/2** | % | SOC-Schwelle für den Bypass des jeweiligen Turms (5 % Hysterese beim Beenden). |
 
 ### Sensoren (Diagnosekategorie)
 
 | Entity | Beschreibung |
 |---|---|
-| **Systemstatus** | Aktueller Schutz-/Betriebszustand (siehe Tabelle unten). |
+| **Systemstatus Turm 1/2** | Betriebszustand des jeweiligen Turms, einschließlich `Bypass` und `Autolade-Modus`. |
 | **Deadband-Status** | Ob der Controller im Modus `Neutral`, `Bezug` oder `Einspeisung` ist. |
 | **Integralwert** | Aktueller PID-Integralterm (W). |
 | **Letzter Zielwert** | Letzter Leistungs-Sollwert, der an die Wechselrichter gesendet wurde (W). |
@@ -501,6 +531,8 @@ Der PID-Regler verwendet einen variablen Proportionalanteil (Kp), der mit der Fe
 | `Beide WR Turm 1 manuell` | Beide WR Turm 1 auf manuellen Betrieb gestellt. |
 | `Beide WR Turm 2 manuell` | Beide WR Turm 2 auf manuellen Betrieb gestellt. |
 | `Alle WR manuell` | Alle WR auf manuellen Betrieb gestellt. |
+| `Bypass` | Bypass des Turms ist aktiv und übersteuert die PID-/Boost-Ausgabe. |
+| `Autolade-Modus` | EV3600-Autolade-Schalter ist an und die Fahrzeugladeleistung größer null; die Wechselrichter dieses Turms werden abgeschaltet. |
 
 ### Binärsensoren (Diagnosekategorie)
 
@@ -532,6 +564,7 @@ Alle <Intervall> Sekunden (und bei relevanten Zustandsänderungen):
 2. Systemzustand berechnen (Schutzprüfung):
    - avg_soc <= Entladegrenze + SOC-Puffer  →  soc_low  →  Abschalten
    - Wechselrichter unerwartet aus          →  Fehlerzustand
+   - EV3600 Autolade-Modus aktiv und Leistung > 0 → nur den jeweiligen Turm abschalten
 3. Wenn Systemzustand soc_low / inv_off / failure:
    - Alle Wechselrichter-Ausgaben auf 0 setzen, Schalter ausschalten
 4. Wenn Boost-Modus:
@@ -541,6 +574,7 @@ Alle <Intervall> Sekunden (und bei relevanten Zustandsänderungen):
    - PID-Schritt: Zielleistung aus Netzfehler berechnen
    - Ziel proportional nach Nennleistung auf aktive Wechselrichter aufteilen
    - Hysterese anwenden, bevor Wechselrichter-Entities beschrieben werden
+6. Turmspezifischen Bypass nach PID/Boost anwenden; SOC-, globale Schutz- und EV3600-Abschaltungen haben Vorrang.
 ```
 
 ---
