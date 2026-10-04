@@ -11,6 +11,8 @@
           "avg_battery_soc": "Battery tower 1 level entity",
           "discharge_limit_a": "Battery cabinet discharge limit entity tower 1",
           "discharge_limit_b": "Hybrid inverter discharge limit entity tower 1, e.g. main hybrid inverter discharge limit",
+          "input_power_entity_tower1": "Tower 1 input power",
+          "ev3600_tower1": "EV3600 tower 1",
           "power_sensor_entity": "Shelly entity or another sensor for the current power",
           "interval_seconds": "Control interval",
           "deadband_min": "Deadband minimum (-20W standard / 1 APsystems -50W / 2 APsystems -100W)",
@@ -18,9 +20,17 @@
           "buffer_soc": "Buffer value for discharge limit",
           "max_power_inverter_limit": "Limit for maximum inverter power limit",
           "min_power_inverter_limit": "Limit for minimum inverter power limit",
-          "hold_time": "Startup delay when regulating from 0% to x%"
+          "hold_time": "Startup delay when regulating from 0% to x%",
+          "bypass_hysteresis": "Bypass hysteresis"
         },
         "title": "General settings"
+      },
+      "ev3600_tower1": {
+        "data": {
+          "ev3600_charge_mode_tower1": "EV3600 auto-charge mode tower 1",
+          "ev3600_charge_power_tower1": "EV3600 vehicle charging power tower 1"
+        },
+        "title": "EV3600 (Tower 1)"
       },
       "inverter1": {
         "data": {
@@ -47,10 +57,19 @@
         "data": {
           "avg_battery_soc_2": "Battery tower 2 level entity (optional)",
           "discharge_limit_a_2": "Battery cabinet discharge limit entity tower 2 (optional)",
-          "discharge_limit_b_2": "Hybrid inverter discharge limit entity tower 2, e.g. main hybrid inverter discharge limit (optional)"
+          "discharge_limit_b_2": "Hybrid inverter discharge limit entity tower 2, e.g. main hybrid inverter discharge limit (optional)",
+          "input_power_entity_tower2": "Tower 2 input power",
+          "ev3600_tower2": "EV3600 tower 2"
         },
         "description": "Leave all fields empty if you do not have a second tower.",
         "title": "Tower 2 (optional)"
+      },
+      "ev3600_tower2": {
+        "data": {
+          "ev3600_charge_mode_tower2": "EV3600 auto-charge mode tower 2",
+          "ev3600_charge_power_tower2": "EV3600 vehicle charging power tower 2"
+        },
+        "title": "EV3600 (Tower 2)"
       },
       "inverter3": {
         "data": {
@@ -95,14 +114,24 @@
           "avg_battery_soc": "Battery tower 1 level entity",
           "discharge_limit_a": "Battery cabinet discharge limit entity tower 1",
           "discharge_limit_b": "Hybrid inverter discharge limit entity tower 1, e.g. main hybrid inverter discharge limit",
+          "input_power_entity_tower1": "Tower 1 input power",
+          "ev3600_tower1": "EV3600 tower 1",
           "power_sensor_entity": "Shelly entity or another sensor for the current power",
           "interval_seconds": "Control interval",
           "buffer_soc": "Buffer value for discharge limit",
           "max_power_inverter_limit": "Limit for maximum inverter power limit",
           "min_power_inverter_limit": "Limit for minimum inverter power limit",
-          "hold_time": "Startup delay when regulating from 0% to x%"
+          "hold_time": "Startup delay when regulating from 0% to x%",
+          "bypass_hysteresis": "Bypass hysteresis"
         },
         "title": "General settings"
+      },
+      "ev3600_tower1": {
+        "data": {
+          "ev3600_charge_mode_tower1": "EV3600 auto-charge mode tower 1",
+          "ev3600_charge_power_tower1": "EV3600 vehicle charging power tower 1"
+        },
+        "title": "EV3600 (Tower 1)"
       },
       "inverter1": {
         "data": {
@@ -129,10 +158,19 @@
         "data": {
           "avg_battery_soc_2": "Battery tower 2 level entity (optional)",
           "discharge_limit_a_2": "Battery cabinet discharge limit entity tower 2 (optional)",
-          "discharge_limit_b_2": "Hybrid inverter discharge limit entity tower 2 (optional)"
+          "discharge_limit_b_2": "Hybrid inverter discharge limit entity tower 2 (optional)",
+          "input_power_entity_tower2": "Tower 2 input power",
+          "ev3600_tower2": "EV3600 tower 2"
         },
         "description": "Leave all fields empty if you do not have a second tower.",
         "title": "Tower 2 (optional)"
+      },
+      "ev3600_tower2": {
+        "data": {
+          "ev3600_charge_mode_tower2": "EV3600 auto-charge mode tower 2",
+          "ev3600_charge_power_tower2": "EV3600 vehicle charging power tower 2"
+        },
+        "title": "EV3600 (Tower 2)"
       },
       "inverter3": {
         "data": {
@@ -216,6 +254,12 @@
       }
     },
     "number": {
+      "start_bypass_tower1": {
+        "name": "Start bypass tower 1"
+      },
+      "start_bypass_tower2": {
+        "name": "Start bypass tower 2"
+      },
       "charge_limit_start": {
         "name": "Feed-in start threshold tower 1"
       },
@@ -239,10 +283,12 @@
       }
     },
     "sensor": {
-      "system_state": {
-        "name": "System state",
+      "system_state_tower1": {
+        "name": "System state tower 1",
         "state": {
           "inactive": "Inactive",
+          "autolade_modus": "Auto-charge mode",
+          "bypass": "Bypass",
           "inv_off": "Inverter off",
           "inv_on": "Inverter on",
           "soc_low": "Battery level low",
@@ -253,17 +299,26 @@
           "inv1_manual_inv2_on": "Inverter 1 manual, inverter 2 on",
           "inv2_manual": "Inverter 2 manual",
           "inv2_manual_inv1_on": "Inverter 2 manual, inverter 1 on",
-          "tower1_soc_low": "Tower 1 battery level low",
-          "tower2_soc_low": "Tower 2 battery level low",
+          "both_manual_tower1": "Both inverters manual"
+        }
+      },
+      "system_state_tower2": {
+        "name": "System state tower 2",
+        "state": {
+          "inactive": "Inactive",
+          "autolade_modus": "Auto-charge mode",
+          "bypass": "Bypass",
+          "inv_off": "Inverter off",
+          "inv_on": "Inverter on",
+          "soc_low": "Battery level low",
+          "failure": "Failure",
           "inv3_on_inv4_failure": "Inverter 3 on, inverter 4 failure",
           "inv4_on_inv3_failure": "Inverter 4 on, inverter 3 failure",
           "inv3_manual": "Inverter 3 manual",
           "inv3_manual_inv4_on": "Inverter 3 manual, inverter 4 on",
           "inv4_manual": "Inverter 4 manual",
           "inv4_manual_inv3_on": "Inverter 4 manual, inverter 3 on",
-          "both_manual_tower2": "Both inverters tower 2 manual",
-          "both_manual_tower1": "Both inverters tower 1 manual",
-          "both_manual": "All inverters manual"
+          "both_manual_tower2": "Both inverters manual"
         }
       },
       "deadband_state": {
@@ -306,6 +361,12 @@
       }
     },
     "switch": {
+      "bypass_tower1": {
+        "name": "Bypass tower 1"
+      },
+      "bypass_tower2": {
+        "name": "Bypass tower 2"
+      },
       "automatic": {
         "name": "Automatic"
       },
@@ -335,6 +396,14 @@
       },
       "inverter4_manual": {
         "name": "Inverter 4 manual disable"
+      }
+    }
+  },
+  "selector": {
+    "yes_no": {
+      "options": {
+        "yes": "Yes",
+        "no": "No"
       }
     }
   }
