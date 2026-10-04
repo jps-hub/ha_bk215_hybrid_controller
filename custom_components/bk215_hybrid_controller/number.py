@@ -20,6 +20,7 @@ from .const import (
     DEFAULT_MAX_POWER_INVERTER,
     DEFAULT_MIN_POWER_INVERTER,
     DEFAULT_OFFSET,
+    DEFAULT_START_BYPASS,
     DOMAIN,
 )
 from .controller import BK215HybridController
@@ -110,6 +111,35 @@ NUMBER_DESCRIPTIONS: tuple[BK215HybridControllerNumberEntityDescription, ...] = 
         option_key="offset",
     ),
     BK215HybridControllerNumberEntityDescription(
+        key="start_bypass_tower1",
+        name=None,
+        translation_key="start_bypass_tower1",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=0,
+        native_max_value=100,
+        native_step=1,
+        native_unit_of_measurement="%",
+        mode=NumberMode.BOX,
+        value_attr="start_bypass_tower1_value",
+        setter="async_set_start_bypass_tower1",
+        option_key="start_bypass_tower1",
+    ),
+    BK215HybridControllerNumberEntityDescription(
+        key="start_bypass_tower2",
+        name=None,
+        translation_key="start_bypass_tower2",
+        entity_category=EntityCategory.CONFIG,
+        native_min_value=0,
+        native_max_value=100,
+        native_step=1,
+        native_unit_of_measurement="%",
+        mode=NumberMode.BOX,
+        value_attr="start_bypass_tower2_value",
+        setter="async_set_start_bypass_tower2",
+        option_key="start_bypass_tower2",
+        requires_tower2=True,
+    ),
+    BK215HybridControllerNumberEntityDescription(
         key="deadband_min",
         name=None,
         translation_key="deadband_min",
@@ -196,6 +226,8 @@ class BK215HybridControllerNumber(NumberEntity):
                     return int(DEFAULT_MIN_POWER_INVERTER)
                 case "offset":
                     return int(DEFAULT_OFFSET)
+                case "start_bypass_tower1" | "start_bypass_tower2":
+                    return int(DEFAULT_START_BYPASS)
                 case _:
                     return 0
         native_value = int(round(float(value)))
