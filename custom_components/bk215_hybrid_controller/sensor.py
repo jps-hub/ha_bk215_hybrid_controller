@@ -41,12 +41,14 @@ class BK215HybridControllerSensorEntityDescription(SensorEntityDescription):
 
 SENSOR_DESCRIPTIONS: tuple[BK215HybridControllerSensorEntityDescription, ...] = (
     BK215HybridControllerSensorEntityDescription(
-        key="system_state",
+        key="system_state_tower1",
         name=None,
-        translation_key="system_state",
+        translation_key="system_state_tower1",
         device_class=SensorDeviceClass.ENUM,
         options=[
             "inactive",
+            "autolade_modus",
+            "bypass",
             "inv_off",
             "inv_on",
             "soc_low",
@@ -58,9 +60,23 @@ SENSOR_DESCRIPTIONS: tuple[BK215HybridControllerSensorEntityDescription, ...] = 
             "inv2_manual",
             "inv2_manual_inv1_on",
             "both_manual_tower1",
-            "both_manual",
-            "tower1_soc_low",
-            "tower2_soc_low",
+        ],
+        entity_category=EntityCategory.DIAGNOSTIC,
+        value_fn=lambda controller: controller.state.system_state_tower1,
+    ),
+    BK215HybridControllerSensorEntityDescription(
+        key="system_state_tower2",
+        name=None,
+        translation_key="system_state_tower2",
+        device_class=SensorDeviceClass.ENUM,
+        options=[
+            "inactive",
+            "autolade_modus",
+            "bypass",
+            "inv_off",
+            "inv_on",
+            "soc_low",
+            "failure",
             "inv3_on_inv4_failure",
             "inv4_on_inv3_failure",
             "inv3_manual",
@@ -70,7 +86,7 @@ SENSOR_DESCRIPTIONS: tuple[BK215HybridControllerSensorEntityDescription, ...] = 
             "both_manual_tower2",
         ],
         entity_category=EntityCategory.DIAGNOSTIC,
-        value_fn=lambda controller: controller.state.system_state,
+        value_fn=lambda controller: controller.state.system_state_tower2,
     ),
     BK215HybridControllerSensorEntityDescription(
         key="deadband_state",
@@ -199,6 +215,10 @@ class BK215HybridControllerSensor(SensorEntity):
         self._controller = controller
         self._attr_unique_id = f"{entry.entry_id}_{description.key}"
         self._attr_translation_key = description.translation_key
+        if description.key == "system_state_tower2":
+            self._attr_entity_registry_enabled_default = (
+                controller.config.tower2_enabled
+            )
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, entry.entry_id)},
             name=entry.title,
