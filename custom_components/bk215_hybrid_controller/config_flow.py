@@ -25,6 +25,7 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     DEFAULT_BUFFER_SOC,
+    DEFAULT_BYPASS_HYSTERESIS,
     DEFAULT_CHARGE_LIMIT_START,
     DEFAULT_DEADBAND_MAX,
     DEFAULT_DEADBAND_MIN,
@@ -65,6 +66,14 @@ INVERTER_TYPE_SELECTOR = SelectSelector(
     )
 )
 
+EV3600_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=["no", "yes"],
+        mode=SelectSelectorMode.DROPDOWN,
+        translation_key="yes_no",
+    )
+)
+
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle the config flow."""
@@ -97,6 +106,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             "deadband_min": DEFAULT_DEADBAND_MIN,
             "deadband_max": DEFAULT_DEADBAND_MAX,
             "buffer_soc": DEFAULT_BUFFER_SOC,
+            "bypass_hysteresis": DEFAULT_BYPASS_HYSTERESIS,
             "hold_time": DEFAULT_HOLD_TIME,
             **data,
         }
@@ -122,6 +132,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Collect general plant settings."""
         if user_input is not None:
             self._data.update(self._merge_general_defaults(user_input))
+            if user_input.get("ev3600_tower1") == "yes":
+                return await self.async_step_ev3600_tower1()
+            self._data["ev3600_charge_mode_tower1"] = ""
+            self._data["ev3600_charge_power_tower1"] = ""
             return await self.async_step_inverter1()
 
         schema = vol.Schema(
@@ -132,6 +146,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required("avg_battery_soc"): _entity("sensor"),
                 vol.Required("discharge_limit_a"): _entity("number"),
                 vol.Required("discharge_limit_b"): _entity("sensor"),
+                vol.Optional("input_power_entity_tower1"): _entity("sensor"),
+                vol.Required("ev3600_tower1", default="no"): EV3600_SELECTOR,
                 vol.Required("power_sensor_entity"): _entity("sensor"),
                 vol.Optional(
                     "interval_seconds", default=DEFAULT_INTERVAL_SECONDS
@@ -180,9 +196,35 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional("hold_time", default=DEFAULT_HOLD_TIME): NumberSelector(
                     NumberSelectorConfig(min=5, max=60, step=1, unit_of_measurement="s")
                 ),
+                vol.Optional(
+                    "bypass_hysteresis", default=DEFAULT_BYPASS_HYSTERESIS
+                ): NumberSelector(
+                    NumberSelectorConfig(
+                        min=1,
+                        max=20,
+                        step=1,
+                        unit_of_measurement="%",
+                    )
+                ),
             }
         )
         return self.async_show_form(step_id="user", data_schema=schema)
+
+    async def async_step_ev3600_tower1(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect EV3600 entities for tower 1."""
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self.async_step_inverter1()
+
+        schema = vol.Schema(
+            {
+                vol.Required("ev3600_charge_mode_tower1"): _entity("switch"),
+                vol.Required("ev3600_charge_power_tower1"): _entity("sensor"),
+            }
+        )
+        return self.async_show_form(step_id="ev3600_tower1", data_schema=schema)
 
     async def async_step_inverter1(
         self, user_input: dict[str, Any] | None = None
@@ -243,6 +285,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional("avg_battery_soc_2"): _entity("sensor"),
                 vol.Optional("discharge_limit_a_2"): _entity("number"),
                 vol.Optional("discharge_limit_b_2"): _entity("sensor"),
+                vol.Optional("input_power_entity_tower2"): _entity("sensor"),
+                vol.Required("ev3600_tower2", default="no"): EV3600_SELECTOR,
             }
         )
 
@@ -257,10 +301,17 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if user_input.get(k)
             ]
             if len(filled) == 0:
+                self._data["input_power_entity_tower2"] = ""
+                self._data["ev3600_charge_mode_tower2"] = ""
+                self._data["ev3600_charge_power_tower2"] = ""
                 return await self.async_step_pid()
             if len(filled) == 3:
                 self._data.update(user_input)
                 self._data["tower2_enabled"] = True
+                if user_input.get("ev3600_tower2") == "yes":
+                    return await self.async_step_ev3600_tower2()
+                self._data["ev3600_charge_mode_tower2"] = ""
+                self._data["ev3600_charge_power_tower2"] = ""
                 return await self.async_step_inverter3()
             return self.async_show_form(
                 step_id="tower2",
@@ -269,6 +320,22 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         return self.async_show_form(step_id="tower2", data_schema=schema)
+
+    async def async_step_ev3600_tower2(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Collect EV3600 entities for tower 2."""
+        if user_input is not None:
+            self._data.update(user_input)
+            return await self.async_step_inverter3()
+
+        schema = vol.Schema(
+            {
+                vol.Required("ev3600_charge_mode_tower2"): _entity("switch"),
+                vol.Required("ev3600_charge_power_tower2"): _entity("sensor"),
+            }
+        )
+        return self.async_show_form(step_id="ev3600_tower2", data_schema=schema)
 
     async def async_step_inverter3(
         self, user_input: dict[str, Any] | None = None
@@ -333,6 +400,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     "charge_limit_start": float(self._data["charge_limit_start"]),
                     "discharge_limit_a": self._data["discharge_limit_a"],
                     "discharge_limit_b": self._data["discharge_limit_b"],
+                    "input_power_entity_tower1": self._data.get(
+                        "input_power_entity_tower1", ""
+                    )
+                    or "",
                     "power_sensor_entity": self._data["power_sensor_entity"],
                     "max_power_inverter": min(
                         float(self._data["max_power_inverter"]),
@@ -353,6 +424,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     "deadband_max": float(self._data["deadband_max"]),
                     "buffer_soc": float(self._data["buffer_soc"]),
                     "hold_time": int(self._data["hold_time"]),
+                    "bypass_hysteresis": float(self._data["bypass_hysteresis"]),
                     "kp_min": float(self._data["kp_min"]),
                     "kp_max": float(self._data["kp_max"]),
                     "kp_error_scale": float(self._data["kp_error_scale"]),
@@ -367,10 +439,28 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     "inverter2": InverterConfig.from_dict(
                         self._data.get("inverter2", {})
                     ).as_dict(),
+                    "ev3600_tower1_enabled": self._data.get("ev3600_tower1") == "yes",
+                    "ev3600_charge_mode_tower1": self._data.get(
+                        "ev3600_charge_mode_tower1", ""
+                    ),
+                    "ev3600_charge_power_tower1": self._data.get(
+                        "ev3600_charge_power_tower1", ""
+                    ),
                     "tower2_enabled": bool(self._data.get("tower2_enabled", False)),
                     "avg_battery_soc_2": self._data.get("avg_battery_soc_2", ""),
                     "discharge_limit_a_2": self._data.get("discharge_limit_a_2", ""),
                     "discharge_limit_b_2": self._data.get("discharge_limit_b_2", ""),
+                    "input_power_entity_tower2": self._data.get(
+                        "input_power_entity_tower2", ""
+                    )
+                    or "",
+                    "ev3600_tower2_enabled": self._data.get("ev3600_tower2") == "yes",
+                    "ev3600_charge_mode_tower2": self._data.get(
+                        "ev3600_charge_mode_tower2", ""
+                    ),
+                    "ev3600_charge_power_tower2": self._data.get(
+                        "ev3600_charge_power_tower2", ""
+                    ),
                     "inverter3": InverterConfig.from_dict(
                         self._data.get("inverter3", {})
                     ).as_dict(),
@@ -531,81 +621,160 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 current_min_power,
                 min_power_limit,
             )
+            self._options["input_power_entity_tower1"] = (
+                user_input.get("input_power_entity_tower1") or ""
+            )
+            self._options["ev3600_tower1_enabled"] = (
+                self._options.pop("ev3600_tower1", "no") == "yes"
+            )
+            if self._options["ev3600_tower1_enabled"]:
+                return await self.async_step_ev3600_tower1()
+            self._options["ev3600_charge_mode_tower1"] = ""
+            self._options["ev3600_charge_power_tower1"] = ""
             return await self.async_step_inverter1()
 
-        schema = vol.Schema(
-            {
-                vol.Required(
-                    "avg_battery_soc",
-                    default=self._config["avg_battery_soc"],
-                ): _entity("sensor"),
-                vol.Required(
-                    "discharge_limit_a",
-                    default=self._config["discharge_limit_a"],
-                ): _entity("number"),
-                vol.Required(
-                    "discharge_limit_b",
-                    default=self._config["discharge_limit_b"],
-                ): _entity("sensor"),
-                vol.Required(
-                    "power_sensor_entity",
-                    default=self._config["power_sensor_entity"],
-                ): _entity("sensor"),
-                vol.Optional(
-                    "interval_seconds",
-                    default=int(
-                        self._config.get("interval_seconds", DEFAULT_INTERVAL_SECONDS)
-                    ),
-                ): NumberSelector(
-                    NumberSelectorConfig(min=1, max=30, step=1, unit_of_measurement="s")
-                ),
-                vol.Optional(
-                    "buffer_soc",
-                    default=float(self._config.get("buffer_soc", DEFAULT_BUFFER_SOC)),
-                ): NumberSelector(
-                    NumberSelectorConfig(min=0, max=10, step=1, unit_of_measurement="%")
-                ),
-                vol.Optional(
-                    "max_power_inverter_limit",
-                    default=float(
-                        self._config.get(
-                            "max_power_inverter_limit",
-                            DEFAULT_MAX_POWER_INVERTER_LIMIT,
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required(
+                        "avg_battery_soc",
+                        default=self._config["avg_battery_soc"],
+                    ): _entity("sensor"),
+                    vol.Required(
+                        "discharge_limit_a",
+                        default=self._config["discharge_limit_a"],
+                    ): _entity("number"),
+                    vol.Required(
+                        "discharge_limit_b",
+                        default=self._config["discharge_limit_b"],
+                    ): _entity("sensor"),
+                    vol.Optional("input_power_entity_tower1"): _entity("sensor"),
+                    vol.Required(
+                        "ev3600_tower1",
+                        default="yes"
+                        if self._config.get("ev3600_tower1_enabled")
+                        else "no",
+                    ): EV3600_SELECTOR,
+                    vol.Required(
+                        "power_sensor_entity",
+                        default=self._config["power_sensor_entity"],
+                    ): _entity("sensor"),
+                    vol.Optional(
+                        "interval_seconds",
+                        default=int(
+                            self._config.get(
+                                "interval_seconds", DEFAULT_INTERVAL_SECONDS
+                            )
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1, max=30, step=1, unit_of_measurement="s"
                         )
                     ),
-                ): NumberSelector(
-                    NumberSelectorConfig(
-                        min=100,
-                        max=5000,
-                        step=10,
-                        unit_of_measurement="W",
-                    )
-                ),
-                vol.Optional(
-                    "min_power_inverter_limit",
-                    default=float(
-                        self._config.get(
-                            "min_power_inverter_limit",
-                            DEFAULT_MIN_POWER_INVERTER_LIMIT,
+                    vol.Optional(
+                        "buffer_soc",
+                        default=float(
+                            self._config.get("buffer_soc", DEFAULT_BUFFER_SOC)
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=0, max=10, step=1, unit_of_measurement="%"
                         )
                     ),
-                ): NumberSelector(
-                    NumberSelectorConfig(
-                        min=0,
-                        max=2500,
-                        step=10,
-                        unit_of_measurement="W",
-                    )
-                ),
-                vol.Optional(
-                    "hold_time",
-                    default=int(self._config.get("hold_time", DEFAULT_HOLD_TIME)),
-                ): NumberSelector(
-                    NumberSelectorConfig(min=5, max=60, step=1, unit_of_measurement="s")
-                ),
-            }
+                    vol.Optional(
+                        "max_power_inverter_limit",
+                        default=float(
+                            self._config.get(
+                                "max_power_inverter_limit",
+                                DEFAULT_MAX_POWER_INVERTER_LIMIT,
+                            )
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=100,
+                            max=5000,
+                            step=10,
+                            unit_of_measurement="W",
+                        )
+                    ),
+                    vol.Optional(
+                        "min_power_inverter_limit",
+                        default=float(
+                            self._config.get(
+                                "min_power_inverter_limit",
+                                DEFAULT_MIN_POWER_INVERTER_LIMIT,
+                            )
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=0,
+                            max=2500,
+                            step=10,
+                            unit_of_measurement="W",
+                        )
+                    ),
+                    vol.Optional(
+                        "hold_time",
+                        default=int(self._config.get("hold_time", DEFAULT_HOLD_TIME)),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=5, max=60, step=1, unit_of_measurement="s"
+                        )
+                    ),
+                    vol.Optional(
+                        "bypass_hysteresis",
+                        default=float(
+                            self._config.get(
+                                "bypass_hysteresis", DEFAULT_BYPASS_HYSTERESIS
+                            )
+                        ),
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=1,
+                            max=20,
+                            step=1,
+                            unit_of_measurement="%",
+                        )
+                    ),
+                }
+            ),
+            {"input_power_entity_tower1": self._config.get("input_power_entity_tower1")}
+            if self._config.get("input_power_entity_tower1")
+            else {},
         )
         return self.async_show_form(step_id="init", data_schema=schema)
+
+    async def async_step_ev3600_tower1(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage EV3600 tower 1 options."""
+        if user_input is not None:
+            self._options.update(user_input)
+            return await self.async_step_inverter1()
+
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required("ev3600_charge_mode_tower1"): _entity("switch"),
+                    vol.Required("ev3600_charge_power_tower1"): _entity("sensor"),
+                }
+            ),
+            {
+                k: v
+                for k, v in {
+                    "ev3600_charge_mode_tower1": self._config.get(
+                        "ev3600_charge_mode_tower1"
+                    )
+                    or None,
+                    "ev3600_charge_power_tower1": self._config.get(
+                        "ev3600_charge_power_tower1"
+                    )
+                    or None,
+                }.items()
+                if v is not None
+            },
+        )
+        return self.async_show_form(step_id="ev3600_tower1", data_schema=schema)
 
     async def async_step_inverter1(
         self, user_input: dict[str, Any] | None = None
@@ -677,6 +846,8 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                     vol.Optional("avg_battery_soc_2"): _entity("sensor"),
                     vol.Optional("discharge_limit_a_2"): _entity("number"),
                     vol.Optional("discharge_limit_b_2"): _entity("sensor"),
+                    vol.Optional("input_power_entity_tower2"): _entity("sensor"),
+                    vol.Required("ev3600_tower2", default="no"): EV3600_SELECTOR,
                 }
             ),
             {
@@ -687,6 +858,13 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                     or None,
                     "discharge_limit_b_2": self._config.get("discharge_limit_b_2")
                     or None,
+                    "input_power_entity_tower2": self._config.get(
+                        "input_power_entity_tower2"
+                    )
+                    or None,
+                    "ev3600_tower2": "yes"
+                    if self._config.get("ev3600_tower2_enabled")
+                    else None,
                 }.items()
                 if v is not None
             },
@@ -707,10 +885,24 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
                 self._options["avg_battery_soc_2"] = ""
                 self._options["discharge_limit_a_2"] = ""
                 self._options["discharge_limit_b_2"] = ""
+                self._options["input_power_entity_tower2"] = ""
+                self._options["ev3600_tower2_enabled"] = False
+                self._options["ev3600_charge_mode_tower2"] = ""
+                self._options["ev3600_charge_power_tower2"] = ""
                 return await self.async_step_pid()
             if len(filled) == 3:
                 self._options.update(user_input)
                 self._options["tower2_enabled"] = True
+                self._options["input_power_entity_tower2"] = (
+                    user_input.get("input_power_entity_tower2") or ""
+                )
+                self._options["ev3600_tower2_enabled"] = (
+                    self._options.pop("ev3600_tower2", "no") == "yes"
+                )
+                if self._options["ev3600_tower2_enabled"]:
+                    return await self.async_step_ev3600_tower2()
+                self._options["ev3600_charge_mode_tower2"] = ""
+                self._options["ev3600_charge_power_tower2"] = ""
                 return await self.async_step_inverter3()
             return self.async_show_form(
                 step_id="tower2",
@@ -719,6 +911,38 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
             )
 
         return self.async_show_form(step_id="tower2", data_schema=schema)
+
+    async def async_step_ev3600_tower2(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage EV3600 tower 2 options."""
+        if user_input is not None:
+            self._options.update(user_input)
+            return await self.async_step_inverter3()
+
+        schema = self.add_suggested_values_to_schema(
+            vol.Schema(
+                {
+                    vol.Required("ev3600_charge_mode_tower2"): _entity("switch"),
+                    vol.Required("ev3600_charge_power_tower2"): _entity("sensor"),
+                }
+            ),
+            {
+                k: v
+                for k, v in {
+                    "ev3600_charge_mode_tower2": self._config.get(
+                        "ev3600_charge_mode_tower2"
+                    )
+                    or None,
+                    "ev3600_charge_power_tower2": self._config.get(
+                        "ev3600_charge_power_tower2"
+                    )
+                    or None,
+                }.items()
+                if v is not None
+            },
+        )
+        return self.async_show_form(step_id="ev3600_tower2", data_schema=schema)
 
     async def async_step_inverter3(
         self, user_input: dict[str, Any] | None = None
@@ -788,6 +1012,12 @@ class BK215HybridControllerOptionsFlow(config_entries.OptionsFlowWithReload):
         """Manage PID options."""
         if user_input is not None:
             self._options.update(user_input)
+            self._options["input_power_entity_tower1"] = (
+                self._options.get("input_power_entity_tower1") or ""
+            )
+            self._options["input_power_entity_tower2"] = (
+                self._options.get("input_power_entity_tower2") or ""
+            )
             return self.async_create_entry(title="", data=self._options)
 
         tower2 = bool(self._config.get("tower2_enabled", False))
