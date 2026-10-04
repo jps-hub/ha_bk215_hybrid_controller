@@ -49,6 +49,23 @@ SWITCH_DESCRIPTIONS: tuple[BK215HybridControllerSwitchEntityDescription, ...] = 
         setter="async_set_boost_enabled",
     ),
     BK215HybridControllerSwitchEntityDescription(
+        key="bypass_tower1",
+        name=None,
+        translation_key="bypass_tower1",
+        entity_category=EntityCategory.CONFIG,
+        enabled_attr="bypass_tower1_enabled",
+        setter="async_set_bypass_tower1_enabled",
+    ),
+    BK215HybridControllerSwitchEntityDescription(
+        key="bypass_tower2",
+        name=None,
+        translation_key="bypass_tower2",
+        entity_category=EntityCategory.CONFIG,
+        enabled_attr="bypass_tower2_enabled",
+        setter="async_set_bypass_tower2_enabled",
+        requires_inverter3=True,
+    ),
+    BK215HybridControllerSwitchEntityDescription(
         key="inverter1_helper",
         name=None,
         translation_key="inverter1_helper",
