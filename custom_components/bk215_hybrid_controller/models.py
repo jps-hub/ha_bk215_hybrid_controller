@@ -7,12 +7,14 @@ from datetime import timedelta
 from typing import Any
 
 from .const import (
+    DEFAULT_BYPASS_HYSTERESIS,
     DEFAULT_CHARGE_LIMIT_START,
     DEFAULT_MAX_POWER_INVERTER,
     DEFAULT_MAX_POWER_INVERTER_LIMIT,
     DEFAULT_MIN_POWER_INVERTER,
     DEFAULT_MIN_POWER_INVERTER_LIMIT,
     DEFAULT_OFFSET,
+    DEFAULT_START_BYPASS,
 )
 
 
@@ -74,6 +76,8 @@ class ControllerConfig:
     discharge_limit_b: str
     power_sensor_entity: str
     offset: float
+    start_bypass_tower1: float
+    start_bypass_tower2: float
     max_power_inverter: float
     max_power_inverter_limit: float
     min_power_inverter: float
@@ -94,6 +98,15 @@ class ControllerConfig:
     inverter1: InverterConfig
     inverter2: InverterConfig
     tower2_enabled: bool = False
+    bypass_hysteresis: float = DEFAULT_BYPASS_HYSTERESIS
+    input_power_entity_tower1: str = ""
+    input_power_entity_tower2: str = ""
+    ev3600_tower1_enabled: bool = False
+    ev3600_charge_mode_tower1: str = ""
+    ev3600_charge_power_tower1: str = ""
+    ev3600_tower2_enabled: bool = False
+    ev3600_charge_mode_tower2: str = ""
+    ev3600_charge_power_tower2: str = ""
     avg_battery_soc_2: str = ""
     discharge_limit_a_2: str = ""
     discharge_limit_b_2: str = ""
@@ -122,6 +135,18 @@ class ControllerConfig:
             discharge_limit_b=str(data["discharge_limit_b"]),
             power_sensor_entity=str(data["power_sensor_entity"]),
             offset=float(data.get("offset", DEFAULT_OFFSET)),
+            start_bypass_tower1=float(
+                data.get(
+                    "start_bypass_tower1",
+                    data.get("start_bypass", DEFAULT_START_BYPASS),
+                )
+            ),
+            start_bypass_tower2=float(
+                data.get("start_bypass_tower2", DEFAULT_START_BYPASS)
+            ),
+            bypass_hysteresis=float(
+                data.get("bypass_hysteresis", DEFAULT_BYPASS_HYSTERESIS)
+            ),
             max_power_inverter=float(
                 data.get("max_power_inverter", DEFAULT_MAX_POWER_INVERTER)
             ),
@@ -156,6 +181,18 @@ class ControllerConfig:
             inverter1=InverterConfig.from_dict(data["inverter1"]),
             inverter2=InverterConfig.from_dict(data["inverter2"]),
             tower2_enabled=bool(data.get("tower2_enabled", False)),
+            input_power_entity_tower1=str(
+                data.get("input_power_entity_tower1", "") or ""
+            ),
+            input_power_entity_tower2=str(
+                data.get("input_power_entity_tower2", "") or ""
+            ),
+            ev3600_tower1_enabled=bool(data.get("ev3600_tower1_enabled", False)),
+            ev3600_charge_mode_tower1=str(data.get("ev3600_charge_mode_tower1", "")),
+            ev3600_charge_power_tower1=str(data.get("ev3600_charge_power_tower1", "")),
+            ev3600_tower2_enabled=bool(data.get("ev3600_tower2_enabled", False)),
+            ev3600_charge_mode_tower2=str(data.get("ev3600_charge_mode_tower2", "")),
+            ev3600_charge_power_tower2=str(data.get("ev3600_charge_power_tower2", "")),
             avg_battery_soc_2=str(data.get("avg_battery_soc_2", "")),
             discharge_limit_a_2=str(data.get("discharge_limit_a_2", "")),
             discharge_limit_b_2=str(data.get("discharge_limit_b_2", "")),
@@ -176,7 +213,13 @@ class RuntimeState:
     """In-memory controller state."""
 
     automatic_enabled: bool = False
+    bypass_tower1_enabled: bool = False
+    bypass_tower2_enabled: bool = False
+    bypass_tower1_active: bool = False
+    bypass_tower2_active: bool = False
     system_state: str = "inactive"
+    system_state_tower1: str = "inactive"
+    system_state_tower2: str = "inactive"
     deadband_state: str = "neutral"
     boost_enabled: bool = False
     inverter1_helper: bool = False
